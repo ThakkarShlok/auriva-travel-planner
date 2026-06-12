@@ -1,13 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   Compass, Globe, Users, Star, Heart, Zap, Sparkles,
   ChevronRight, Rocket, Shield, Github, Linkedin, Mail,
   Target, Coffee, BookOpen, Calendar, Eye
 } from 'lucide-react';
 import founderPhoto from '../../assets/Professional Photo (5).png';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const AboutPage = () => {
+  usePageTitle('About');
   const stats = [
     { value: '10,000+', label: 'Happy Travelers', icon: Users, desc: 'From 50+ countries' },
     { value: '50+', label: 'Destinations', icon: Globe, desc: 'Across 6 continents' },
@@ -35,7 +37,7 @@ const AboutPage = () => {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-primary text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-700 via-primary-800 to-primary-900 text-white">
         <div className="absolute inset-0 bg-black/30"></div>
         <div className="container-custom relative py-24 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
@@ -162,7 +164,7 @@ const AboutPage = () => {
           <div className="max-w-4xl mx-auto">
             <div className="relative">
               {/* Timeline line */}
-              <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-500 to-primary-600 transform -translate-x-1/2 hidden md:block"></div>
+              <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-primary-500 transform -translate-x-1/2 hidden md:block"></div>
               
               {journeyMilestones.map((milestone, idx) => (
                 <div key={idx} className={`relative flex flex-col md:flex-row gap-6 mb-12 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>

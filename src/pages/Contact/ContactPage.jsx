@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import { Mail, Phone, MapPin, Clock, MessageCircle, Send, CheckCircle, Github, Linkedin, Sparkles, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
+import usePageTitle from '../../hooks/usePageTitle'
 
 const ContactPage = () => {
+  usePageTitle('Contact')
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -176,8 +178,8 @@ const ContactPage = () => {
                 <p className="text-sm text-primary-200">✨ Try asking: "What's the best time to visit Bali?"</p>
               </div>
               <div className="flex gap-4">
-                <button 
-                  onClick={() => window.dispatchEvent(new CustomEvent('openChat'))}
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('auriva:open-chat'))}
                   className="flex-1 bg-white text-primary-700 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
                 >
                   Start Chat Now
@@ -185,7 +187,7 @@ const ContactPage = () => {
               </div>
               <div className="mt-6 pt-6 border-t border-white/20">
                 <p className="text-primary-200 text-sm">Average response time: &lt; 30 seconds</p>
-                <p className="text-primary-300 text-xs mt-2">Powered by Groq AI • Instant answers</p>
+                <p className="text-primary-300 text-xs mt-2">Powered by Groq AI • Demo purposes only</p>
               </div>
             </div>
 
