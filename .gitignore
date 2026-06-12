@@ -58,3 +58,4 @@ Thumbs.db
 # Vite
 .vite/
 *.local
+.vercel

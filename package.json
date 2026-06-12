@@ -1,31 +1,39 @@
 {
-  "name": "voyage-ai-pro",
+  "name": "auriva",
   "private": true,
-  "version": "2.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node api/serve-local.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "react-redux": "^9.1.0",
+    "@clerk/clerk-react": "^5.61.8",
+    "@neondatabase/serverless": "^1.1.0",
     "@reduxjs/toolkit": "^2.2.0",
     "axios": "^1.6.7",
-    "react-hot-toast": "^2.4.1",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.330.0",
-    "date-fns": "^3.3.1",
-    "react-hook-form": "^7.51.0",
-    "zod": "^3.22.4"
+    "partial-json": "^0.1.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-redux": "^9.1.0",
+    "react-router-dom": "^6.22.0",
+    "svix": "^1.95.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
+    "drizzle-kit": "^0.31.10",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.4"
