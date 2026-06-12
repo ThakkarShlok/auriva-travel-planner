@@ -1,115 +1,134 @@
-# 🌍 Auriva - AI Travel Strategist
+# Auriva — AI Travel Planner
 
-[![React](https://img.shields.io/badge/React-18.2-61dafb?logo=react)](https://reactjs.org/)
-[![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.2-764abc?logo=redux)](https://redux-toolkit.js.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-5.1-646cff?logo=vite)](https://vitejs.dev/)
-[![Groq](https://img.shields.io/badge/Groq-API-00A67E)](https://groq.com/)
+[![React](https://img.shields.io/badge/React-18-61dafb?logo=react)](https://reactjs.org/)
+[![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2-764abc?logo=redux)](https://redux-toolkit.js.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite)](https://vitejs.dev/)
 
-> **Production-grade AI-powered travel planning application that generates personalized itineraries in seconds.**
+AI-powered travel itinerary generator. Enter a destination, duration, budget, and interests — Auriva streams a personalised day-by-day plan and lets you refine it conversationally.
 
-## ✨ Live Demo
+## What it does
 
-*(Add your deployed link here after deployment)*
+- Fill in a destination, duration, budget, and interests on the Onboarding page
+- The app streams a day-by-day itinerary in real time using Server-Sent Events (Groq → SSE → client)
+- Refine the result conversationally via the sidebar chat panel
+- Save trips to your account, duplicate, or delete them from the Dashboard
+- An AI chat assistant can answer follow-up travel questions
 
-## 🎯 Project Highlights for Recruiters
+## Tech stack
 
-This project demonstrates:
+| | |
+|---|---|
+| Frontend | React 18, Vite 5, React Router v6 |
+| State | Redux Toolkit |
+| Styling | Tailwind CSS v3, custom design tokens |
+| Auth | Clerk (email/password, Google OAuth, GitHub OAuth) |
+| Database | Neon serverless Postgres + Drizzle ORM |
+| AI | Groq (Llama 3.3 70B for itineraries, Llama 3.1 8B for chat) |
+| Icons | Lucide React |
+| Deployment | Vercel |
 
-- **Scalable Frontend Architecture** - Feature-based organization with Redux Toolkit
-- **Production-Grade State Management** - RTK Query pattern for async operations
-- **Professional UI/UX** - Custom Tailwind theme, responsive across all devices
-- **Real AI Integration** - Groq API with rate limiting and error handling
-- **Performance Optimized** - Lazy loading, code splitting, skeleton loaders
-- **Complete Authentication Flow** - Login/Register with protected routes
-- **Local Storage Persistence** - Saved trips persist across sessions
+## Local development setup
 
-## 🚀 Features
+### 1. Install dependencies
 
-### Core Functionality
-- 🤖 **AI-Powered Itinerary Generation** - Personalized day-wise plans using Groq API
-- 📝 **Smart Onboarding Flow** - Progressive disclosure of travel preferences
-- 💰 **Dynamic Budget Planning** - Real-time budget breakdown and optimization
-- 🗺️ **Destination Discovery** - 20+ destinations with search and filters
-- 💬 **AI Chat Assistant** - 24/7 travel advice via Groq API
-- 📱 **Responsive Design** - Mobile-first approach with seamless desktop experience
+```bash
+npm install
+```
 
-### User Experience
-- 🔐 **Complete Authentication** - Login, Register, Forgot Password with session management
-- 💾 **Trip Persistence** - Save and revisit itineraries
-- 🎨 **Custom Design System** - Professional color theme
-- ⚡ **Skeleton Loaders** - Smooth loading states
+### 2. Configure environment
 
-## 🛠️ Tech Stack
+```bash
+cp .env.example .env.local
+```
 
-| Category | Technology |
-|----------|------------|
-| **Frontend** | React 18, Vite |
-| **State Management** | Redux Toolkit |
-| **Styling** | Tailwind CSS |
-| **Routing** | React Router DOM v6 |
-| **HTTP Client** | Axios |
-| **AI API** | Groq (Llama 3.1 8B) |
-| **Icons** | Lucide React |
-| **Notifications** | React Hot Toast |
+Fill in `.env.local`:
 
-## 📁 Project Structure
-auriva-travel-planner/
-├── src/
-│ ├── components/ # Reusable UI components
-│ │ ├── cards/ # DestinationCard, TripCard
-│ │ ├── layout/ # Navbar, Footer, Layout
-│ │ ├── ui/ # Button, Input, Select, Textarea, Badge, Loader
-│ │ └── ChatBot/ # AI chat assistant
-│ ├── pages/ # Route-based pages
-│ │ ├── auth/ # Login, Register, ForgotPassword
-│ │ ├── Home/ # Landing page
-│ │ ├── Onboarding/ # Trip preferences form
-│ │ ├── Planner/ # Itinerary generation
-│ │ ├── Dashboard/ # Saved trips
-│ │ ├── Discover/ # Destination discovery
-│ │ ├── About/ # Company info
-│ │ └── Contact/ # Contact form
-│ ├── store/ # Redux slices (auth, trip, ui)
-│ ├── services/ # API layer, Groq service, localStorage
-│ ├── hooks/ # Custom hooks (useDebounce, usePageTitle)
-│ ├── constants/ # Destinations database, routes
-│ └── assets/ # Images, global styles
-├── public/
-└── package.json
+| Variable | Where to get it |
+|---|---|
+| `GROQ_API_KEY` | https://console.groq.com |
+| `DATABASE_URL` | Neon dashboard → Connection Details → Pooled connection string |
+| `DATABASE_URL_UNPOOLED` | Neon dashboard → Connection Details → Direct connection string |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys |
+| `CLERK_SECRET_KEY` | Clerk dashboard → API Keys |
+| `CLERK_WEBHOOK_SECRET` | Added after webhook setup — see below |
 
+### 3. Push the database schema
 
-Environment Variables
-Create a .env file in the root directory:
+```bash
+npm run db:push
+```
 
-env
-VITE_GROQ_API_URL=https://api.groq.com/openai/v1
-VITE_GROQ_API_KEY=your_groq_api_key_here
-🎨 Color Theme
-Color	Usage
-Navy Blue	Primary brand, buttons, headers
-Warm Sand	Secondary accents
-Terracotta	Hover states
-White/Gray	Backgrounds, cards
-📱 Responsive Breakpoints
-Mobile: 375px - 640px
+Verify in the Neon SQL editor — `SELECT * FROM users;` should return 0 rows with the table created.
 
-Tablet: 768px - 1024px
+### 4. Start the dev server
 
-Desktop: 1280px - 1536px
+```bash
+npm run dev
+```
 
-🔒 Security Notes
-API keys stored in environment variables only
+API routes are served by a Vite plugin — no separate server process or `vercel dev` needed.
 
-.env is excluded from version control via .gitignore
+## Authentication and database
 
-For production, route API calls through a backend proxy
+### Schema commands
 
-📧 Contact
-Shlok Thakkar
+```bash
+npm run db:push       # sync schema directly to database (development)
+npm run db:generate   # generate SQL migration files from schema changes
+npm run db:migrate    # apply pending migration files (production workflow)
+npm run db:studio     # open Drizzle Studio at http://localhost:4983
+```
 
-GitHub: @ThakkarShlok
+Use `db:push` for rapid iteration. Use `db:generate` + `db:migrate` for production deployments.
 
-LinkedIn: Shlok Thakkar
+### Webhook setup (one-time)
 
-Email: thakkarshlok2007@gmail.com
+Clerk fires webhook events when users sign up or update their profile. The `/api/webhooks/clerk` endpoint mirrors these into the local `users` table.
+
+**Local development with ngrok:**
+
+1. `npx ngrok http 5174`
+2. Clerk Dashboard → Webhooks → Add Endpoint → paste the ngrok HTTPS URL + `/api/webhooks/clerk`
+3. Subscribe to events: `user.created`, `user.updated`, `user.deleted`
+4. Copy the signing secret (`whsec_...`) into `.env.local` as `CLERK_WEBHOOK_SECRET`
+
+**Note:** The app works without webhooks configured. Users can sign in/out via Clerk. The webhook only ensures the local `users` table stays in sync. Phase 7B (trip persistence) requires it.
+
+### Why these choices
+
+- **Neon**: Free tier doesn't auto-pause. First-class serverless pooling and database branching.
+- **Clerk**: Production-grade auth with OAuth flows, session management, MFA, and account linking out of the box.
+- **Drizzle**: TypeScript-first schema-as-code, lighter runtime than Prisma, explicit Neon driver support.
+
+## Project structure
+
+```
+src/
+  components/      UI primitives, layout, chatbot, refinement panel
+  db/              Drizzle schema (schema.js) + database client (index.js)
+  hooks/           usePageTitle, useDebounce
+  pages/           Route-level page components
+  routes/          PrivateRoute guard (Clerk-backed)
+  services/        API clients — streaming, groq, localStorage
+  store/           Redux slices — trip, auth (Phase 7B stub)
+api/
+  _lib/groq.js     Shared Groq key assertion
+  webhooks/        Clerk webhook handler
+  *.js             API route handlers
+drizzle/           Generated SQL migration files
+```
+
+## Health check
+
+```bash
+curl http://localhost:5174/api/health
+```
+
+Returns `ok: true` when all four checks (Groq key, DATABASE_URL, CLERK_SECRET_KEY, database connection) are healthy.
+
+## Contact
+
+Shlok Thakkar — [thakkarshlok2007@gmail.com](mailto:thakkarshlok2007@gmail.com)
+
+GitHub: [@ThakkarShlok](https://github.com/ThakkarShlok) · LinkedIn: [Shlok Thakkar](https://www.linkedin.com/in/shlok-thakkar-58a033354)
