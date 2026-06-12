@@ -1,4 +1,3 @@
-// tailwind.config.js - Clean Professional Theme
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,54 +7,52 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary - Warm Navy Blue (Professional, Trustworthy)
+        // Primary — Indigo. Brand identity, navigation, primary CTAs, links.
+        // Main brand: primary-800 — deeper, more premium than 600.
         primary: {
-          50: '#f0f4f8',
-          100: '#e1e8ef',
-          200: '#c3d0df',
-          300: '#a5b8cf',
-          400: '#87a0bf',
-          500: '#6988af',
-          600: '#55709c',
-          700: '#42587a',
-          800: '#2f4058',
-          900: '#1c2836',
+          50:  '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',  // main brand — buttons, logo, focus rings
+          900: '#312e81',
+          950: '#1e1b4b',
         },
-        // Secondary - Warm Sand/Taupe (Elegant, Natural)
-        secondary: {
-          50: '#faf8f6',
-          100: '#f5f0ec',
-          200: '#eae1d9',
-          300: '#dfd2c6',
-          400: '#d4c3b3',
-          500: '#C9B4A0',
-          600: '#b59a82',
-          700: '#9a7d64',
-          800: '#7f6046',
-          900: '#644328',
-        },
-        // Accent - Soft Terracotta (Warm, Inviting)
+        // Accent — Amber. Warm CTAs, badges, "save / plan" actions.
         accent: {
-          50: '#fdf6f3',
-          100: '#fbece6',
-          200: '#f7d9cd',
-          300: '#f3c6b4',
-          400: '#efb39b',
-          500: '#EBA082',
-          600: '#e27d56',
-          700: '#d15a2a',
-          800: '#a8451a',
-          900: '#7f3010',
+          50:  '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',  // main accent — warm CTAs, badges
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+        },
+        // Secondary — Slate. All neutral grays. Backgrounds, text, borders.
+        secondary: {
+          50:  '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
         },
       },
       boxShadow: {
         'soft': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
         'hover': '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-      },
-      backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #1c2836 0%, #2f4058 50%, #42587a 100%)',
-        'gradient-secondary': 'linear-gradient(135deg, #C9B4A0 0%, #B59A82 100%)',
       },
     },
   },
