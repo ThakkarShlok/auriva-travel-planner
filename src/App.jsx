@@ -1,8 +1,10 @@
+// src/App.jsx
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout/Layout'
 import PrivateRoute from './routes/PrivateRoute'
 import Loader from './components/ui/Loader'
+import ClerkSyncBridge from './components/ClerkSyncBridge'
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/Home/HomePage'))
@@ -14,18 +16,18 @@ const AboutPage = lazy(() => import('./pages/About/AboutPage'))
 const ContactPage = lazy(() => import('./pages/Contact/ContactPage'))
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
-const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const DiscoverPage = lazy(() => import('./pages/Discover/DiscoverPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function App() {
   return (
     <Suspense fallback={<Loader fullScreen />}>
+      <ClerkSyncBridge />
       <Routes>
-        {/* Auth routes - no layout */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        
+        {/* Auth routes — /* suffix lets Clerk handle multi-step flows (verification, OAuth callbacks) */}
+        <Route path="/login/*" element={<LoginPage />} />
+        <Route path="/register/*" element={<RegisterPage />} />
+
         {/* Main routes with layout */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -33,7 +35,7 @@ function App() {
           <Route path="discover" element={<DiscoverPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
-          
+
           {/* Protected routes */}
           <Route path="planner" element={
             <PrivateRoute>
@@ -50,6 +52,9 @@ function App() {
               <ItineraryDetailPage />
             </PrivateRoute>
           } />
+
+          {/* Catch-all 404 inside Layout */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </Suspense>

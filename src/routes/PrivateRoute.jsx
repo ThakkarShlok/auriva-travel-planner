@@ -1,16 +1,22 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { Navigate, useLocation } from 'react-router-dom';
+import React from 'react'
+import { useAuth } from '@clerk/clerk-react'
+import { Navigate, useLocation } from 'react-router-dom'
+import Loader from '../components/UI/Loader'
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useSelector(state => state.auth);
-  const location = useLocation();
+  const { isLoaded, isSignedIn } = useAuth()
+  const location = useLocation()
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // Clerk hasn't initialised yet — show fullscreen loader to prevent flash-redirect
+  if (!isLoaded) {
+    return <Loader fullScreen />
   }
 
-  return children;
-};
+  if (!isSignedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
 
-export default PrivateRoute;
+  return children
+}
+
+export default PrivateRoute
