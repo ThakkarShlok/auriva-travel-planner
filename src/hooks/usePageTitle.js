@@ -1,10 +1,11 @@
+// src/hooks/usePageTitle.js
 import { useEffect } from 'react';
 
-function usePageTitle(title, appName = 'Voyage AI') {
+function usePageTitle(title, appName = 'Auriva') {
   useEffect(() => {
     const originalTitle = document.title;
     document.title = title ? `${title} · ${appName}` : appName;
-    
+
     return () => {
       document.title = originalTitle;
     };

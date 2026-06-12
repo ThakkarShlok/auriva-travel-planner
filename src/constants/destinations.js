@@ -1,4 +1,3 @@
-// src/constants/destinations.js - Expanded Database with Indian & International Places
 const destinationsDatabase = [
   // International Destinations
   {
@@ -11,8 +10,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=500&fit=crop',
     highlight: 'Eiffel Tower, Louvre Museum, Seine River cruises',
     budget: 'moderate',
-    interests: 'Art, History, Fine Dining',
-    season: 'Apr-Oct'
+    interests: ['Art', 'History', 'Fine Dining'],
+    season: 'Apr-Oct',
+    coordinates: { lat: 48.8566, lng: 2.3522 },
   },
   {
     id: 'tokyo',
@@ -24,8 +24,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=500&fit=crop',
     highlight: 'Shibuya Crossing, Senso-ji Temple, Tsukiji Fish Market',
     budget: 'moderate',
-    interests: 'Technology, Food, Culture',
-    season: 'Mar-May, Sep-Nov'
+    interests: ['Technology', 'Food', 'Culture'],
+    season: 'Mar-May, Sep-Nov',
+    coordinates: { lat: 35.6762, lng: 139.6503 },
   },
   {
     id: 'switzerland',
@@ -37,8 +38,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?w=800&h=500&fit=crop',
     highlight: 'Jungfraujoch, Matterhorn, Lake Geneva',
     budget: 'luxury',
-    interests: 'Mountains, Adventure, Scenic Beauty',
-    season: 'Jun-Sep, Dec-Mar'
+    interests: ['Mountains', 'Adventure', 'Scenic Beauty'],
+    season: 'Jun-Sep, Dec-Mar',
+    coordinates: { lat: 46.8182, lng: 8.2275 },
   },
   {
     id: 'london',
@@ -50,8 +52,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&h=500&fit=crop',
     highlight: 'Buckingham Palace, London Eye, British Museum',
     budget: 'moderate',
-    interests: 'History, Museums, Theatre',
-    season: 'May-Sep'
+    interests: ['History', 'Museums', 'Theatre'],
+    season: 'May-Sep',
+    coordinates: { lat: 51.5074, lng: -0.1278 },
   },
   {
     id: 'bali',
@@ -63,8 +66,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=500&fit=crop',
     highlight: 'Ubud Monkey Forest, Tanah Lot Temple, Seminyak Beach',
     budget: 'budget',
-    interests: 'Beaches, Temples, Yoga, Nature',
-    season: 'Apr-Oct'
+    interests: ['Beaches', 'Temples', 'Yoga', 'Nature'],
+    season: 'Apr-Oct',
+    coordinates: { lat: -8.3405, lng: 115.0920 },
   },
   {
     id: 'dubai',
@@ -76,8 +80,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=500&fit=crop',
     highlight: 'Burj Khalifa, Palm Jumeirah, Desert Safari',
     budget: 'luxury',
-    interests: 'Shopping, Architecture, Adventure',
-    season: 'Nov-Mar'
+    interests: ['Shopping', 'Architecture', 'Adventure'],
+    season: 'Nov-Mar',
+    coordinates: { lat: 25.2048, lng: 55.2708 },
   },
 
   // Indian Destinations
@@ -91,8 +96,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1512343879784-960f3d9f6e8a?w=800&h=500&fit=crop',
     highlight: 'Baga Beach, Dudhsagar Falls, Old Goa Churches',
     budget: 'budget',
-    interests: 'Beaches, Nightlife, Water Sports',
-    season: 'Nov-Feb'
+    interests: ['Beaches', 'Nightlife', 'Water Sports'],
+    season: 'Nov-Feb',
+    coordinates: { lat: 15.2993, lng: 74.1240 },
   },
   {
     id: 'jaipur',
@@ -104,8 +110,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&h=500&fit=crop',
     highlight: 'Hawa Mahal, Amer Fort, City Palace',
     budget: 'budget',
-    interests: 'History, Architecture, Shopping',
-    season: 'Oct-Mar'
+    interests: ['History', 'Architecture', 'Shopping'],
+    season: 'Oct-Mar',
+    coordinates: { lat: 26.9124, lng: 75.7873 },
   },
   {
     id: 'kerala',
@@ -117,8 +124,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=800&h=500&fit=crop',
     highlight: 'Alleppey Backwaters, Munnar Tea Gardens, Kovalam Beach',
     budget: 'moderate',
-    interests: 'Nature, Wellness, Houseboats',
-    season: 'Sep-Mar'
+    interests: ['Nature', 'Wellness', 'Houseboats'],
+    season: 'Sep-Mar',
+    coordinates: { lat: 10.8505, lng: 76.2711 },
   },
   {
     id: 'ladakh',
@@ -130,8 +138,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1589182373726-e4f658ab1acf?w=800&h=500&fit=crop',
     highlight: 'Pangong Lake, Nubra Valley, Khardung La Pass',
     budget: 'moderate',
-    interests: 'Adventure, Photography, Buddhism',
-    season: 'Jun-Sep'
+    interests: ['Adventure', 'Photography', 'Buddhism'],
+    season: 'Jun-Sep',
+    coordinates: { lat: 34.1526, lng: 77.5771 },
   },
   {
     id: 'manali',
@@ -143,8 +152,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&h=500&fit=crop',
     highlight: 'Rohtang Pass, Solang Valley, Hadimba Temple',
     budget: 'budget',
-    interests: 'Adventure, Snow, Trekking',
-    season: 'Dec-Feb, May-Jun'
+    interests: ['Adventure', 'Snow', 'Trekking'],
+    season: 'Dec-Feb, May-Jun',
+    coordinates: { lat: 32.2396, lng: 77.1887 },
   },
   {
     id: 'varanasi',
@@ -156,8 +166,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1561361058-c24cecae35ca?w=800&h=500&fit=crop',
     highlight: 'Ganga Aarti, Kashi Vishwanath Temple, Sarnath',
     budget: 'budget',
-    interests: 'Spiritual, Culture, History',
-    season: 'Oct-Mar'
+    interests: ['Spiritual', 'Culture', 'History'],
+    season: 'Oct-Mar',
+    coordinates: { lat: 25.3176, lng: 82.9739 },
   },
   {
     id: 'udaipur',
@@ -169,8 +180,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1565183928294-7063f23ce0f8?w=800&h=500&fit=crop',
     highlight: 'Lake Pichola, City Palace, Jag Mandir',
     budget: 'moderate',
-    interests: 'Romance, History, Photography',
-    season: 'Sep-Mar'
+    interests: ['Romance', 'History', 'Photography'],
+    season: 'Sep-Mar',
+    coordinates: { lat: 24.5854, lng: 73.7125 },
   },
   {
     id: 'mysore',
@@ -182,8 +194,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1593591614089-2a7d8c4c31d4?w=800&h=500&fit=crop',
     highlight: 'Mysore Palace, Chamundi Hills, Brindavan Gardens',
     budget: 'budget',
-    interests: 'History, Architecture, Culture',
-    season: 'Oct-Mar'
+    interests: ['History', 'Architecture', 'Culture'],
+    season: 'Oct-Mar',
+    coordinates: { lat: 12.2958, lng: 76.6394 },
   },
 
   // More International
@@ -197,8 +210,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=800&h=500&fit=crop',
     highlight: 'Grand Palace, Wat Arun, Chatuchak Market',
     budget: 'budget',
-    interests: 'Food, Temples, Nightlife',
-    season: 'Nov-Feb'
+    interests: ['Food', 'Temples', 'Nightlife'],
+    season: 'Nov-Feb',
+    coordinates: { lat: 13.7563, lng: 100.5018 },
   },
   {
     id: 'singapore',
@@ -210,21 +224,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1525625293386-3f2f0b4c5f9f?w=800&h=500&fit=crop',
     highlight: 'Marina Bay Sands, Gardens by the Bay, Sentosa',
     budget: 'luxury',
-    interests: 'Shopping, Family, Architecture',
-    season: 'Feb-Apr, Nov-Dec'
-  },
-  {
-    id: 'dubai',
-    title: 'Dubai, UAE',
-    subtitle: 'Luxury shopping, desert safaris & modern marvels',
-    category: 'International',
-    duration: '4-5 days',
-    rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=500&fit=crop',
-    highlight: 'Burj Khalifa, Palm Jumeirah, Desert Safari',
-    budget: 'luxury',
-    interests: 'Shopping, Architecture, Adventure',
-    season: 'Nov-Mar'
+    interests: ['Shopping', 'Family', 'Architecture'],
+    season: 'Feb-Apr, Nov-Dec',
+    coordinates: { lat: 1.3521, lng: 103.8198 },
   },
   {
     id: 'barcelona',
@@ -236,8 +238,9 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=500&fit=crop',
     highlight: 'Sagrada Familia, Park Güell, Las Ramblas',
     budget: 'moderate',
-    interests: 'Architecture, Food, Beach',
-    season: 'May-Oct'
+    interests: ['Architecture', 'Food', 'Beach'],
+    season: 'May-Oct',
+    coordinates: { lat: 41.3851, lng: 2.1734 },
   },
   {
     id: 'newyork',
@@ -249,9 +252,10 @@ const destinationsDatabase = [
     image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&h=500&fit=crop',
     highlight: 'Times Square, Central Park, Statue of Liberty',
     budget: 'luxury',
-    interests: 'Shopping, Theater, Landmarks',
-    season: 'Apr-Jun, Sep-Nov'
-  }
+    interests: ['Shopping', 'Theater', 'Landmarks'],
+    season: 'Apr-Jun, Sep-Nov',
+    coordinates: { lat: 40.7128, lng: -74.0060 },
+  },
 ]
 
 export default destinationsDatabase
