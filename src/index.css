@@ -8,7 +8,7 @@
   * {
     @apply border-gray-200;
   }
-  
+
   body {
     @apply bg-gray-50 text-gray-800 antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -19,21 +19,31 @@
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-  
+
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+
   .btn-primary {
-    @apply bg-primary-700 text-white font-medium py-3 px-6 rounded-xl
-           transition-all duration-300 hover:bg-primary-800 hover:shadow-md
-           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+    @apply bg-primary-800 text-white font-medium py-3 px-6 rounded-xl
+           transition-all duration-300 hover:bg-primary-900 hover:shadow-md
+           focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2
            active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
-  
+
   .btn-secondary {
-    @apply bg-white text-gray-700 border border-gray-200 font-medium py-3 px-6 rounded-xl
-           transition-all duration-300 hover:bg-gray-50 hover:shadow-sm
+    @apply bg-white text-slate-700 border border-slate-200 font-medium py-3 px-6 rounded-xl
+           transition-all duration-300 hover:bg-slate-50 hover:shadow-sm
            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
-  
+
   .card {
-    @apply bg-white rounded-xl shadow-card hover:shadow-hover transition-all duration-300;
+    @apply bg-white rounded-2xl border border-slate-100 shadow-soft;
+  }
+
+  /* Canonical hero gradient — "twilight sky": deeper indigo into slate.
+     Use on PageHeader variant=hero, GradientCTA, and any full-bleed hero band. */
+  .hero-gradient {
+    @apply bg-gradient-to-br from-primary-800 via-primary-900 to-slate-900 text-white;
   }
 }
