@@ -3,12 +3,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
   generateItineraryStreaming,
-  saveTrip,
+  persistTrip,
   clearCurrentTrip,
   clearError,
   streamAborted,
 } from '../../store/slices/tripSlice'
-import { AlertCircle, Download, RefreshCw, ArrowLeft, ChevronRight } from 'lucide-react'
+import { AlertCircle, RefreshCw, ArrowLeft, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import usePageTitle from '../../hooks/usePageTitle'
 import PageHeader from '../../components/UI/PageHeader'
@@ -17,23 +17,8 @@ import Card from '../../components/UI/Card'
 import TimelineDay from '../../components/UI/TimelineDay'
 import SkeletonCard from '../../components/UI/SkeletonCard'
 import EmptyState from '../../components/UI/EmptyState'
-import RefinementPanel from '../../components/Refinement/RefinementPanel'
 
-// ─── Trip context card ────────────────────────────────────────────────────────
-
-const ContextCard = ({ data }) => (
-  <Card padding="md" className="mb-6">
-    <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
-      {data.destination && <span><span className="font-medium text-slate-700">{data.destination}</span></span>}
-      {data.duration && <span>{data.duration} days</span>}
-      {data.travelers && <span>{data.travelers} traveler{data.travelers !== 1 ? 's' : ''}</span>}
-      {data.budget && <span className="capitalize">{data.budget} budget</span>}
-      {data.interests && <span className="truncate max-w-xs">{data.interests}</span>}
-    </div>
-  </Card>
-)
-
-// ─── Sidebar content ──────────────────────────────────────────────────────────
+// ─── Sidebar cards (streaming preview + final) ────────────────────────────────
 
 const SidebarCards = ({ trip }) => {
   if (!trip) {
@@ -46,17 +31,18 @@ const SidebarCards = ({ trip }) => {
     )
   }
 
-  const budgetTotal = trip.budget
-    ? Object.values(trip.budget).reduce((a, b) => a + b, 0)
+  const budgetData = trip.budgetBreakdown || trip.budget
+  const budgetTotal = budgetData && typeof budgetData === 'object'
+    ? Object.values(budgetData).reduce((a, b) => a + b, 0)
     : 0
 
   return (
     <>
-      {trip.budget && (
+      {budgetData && typeof budgetData === 'object' && (
         <Card padding="md">
           <h3 className="text-sm font-semibold text-slate-800 mb-4">Budget Breakdown</h3>
           <div className="space-y-3">
-            {Object.entries(trip.budget).map(([key, value]) => {
+            {Object.entries(budgetData).map(([key, value]) => {
               const pct = budgetTotal > 0 ? Math.round((value / budgetTotal) * 100) : 0
               return (
                 <div key={key}>
@@ -101,19 +87,6 @@ const SidebarCards = ({ trip }) => {
           </ul>
         </Card>
       )}
-
-      {trip.tips?.length > 0 && (
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-slate-800 mb-3">Travel Tips</h3>
-          <div className="bg-accent-50 rounded-xl p-4">
-            <ul className="space-y-2">
-              {trip.tips.map((tip, idx) => (
-                <li key={idx} className="text-slate-700 text-sm leading-relaxed">{tip}</li>
-              ))}
-            </ul>
-          </div>
-        </Card>
-      )}
     </>
   )
 }
@@ -125,6 +98,7 @@ const PlannerPage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const hasGenerated = useRef(false)
+  const persistingRef = useRef(false)
 
   const {
     onboardingData,
@@ -146,35 +120,44 @@ const PlannerPage = () => {
 
     const promise = dispatch(generateItineraryStreaming(onboardingData))
     return () => {
-      // Synchronously reset loading state so StrictMode's second mount sees clean
-      // state and can restart. Reset the ref so the second mount isn't blocked.
       dispatch(streamAborted())
       hasGenerated.current = false
       promise.abort()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSaveTrip = () => {
-    if (!currentTrip) return
-    dispatch(saveTrip({
-      ...currentTrip,
-      destination: onboardingData.destination,
-      duration: onboardingData.duration,
-      travelers: onboardingData.travelers,
-      budget: onboardingData.budget,
+  // After streaming completes, persist to Neon then navigate to the persistent URL
+  useEffect(() => {
+    if (!currentTrip || loading || persistingRef.current) return
+    persistingRef.current = true
+
+    dispatch(persistTrip({
+      preferences: {
+        destination: onboardingData.destination,
+        duration: onboardingData.duration,
+        travelers: onboardingData.travelers,
+        budget: onboardingData.budget,
+        interests: onboardingData.interests || null,
+      },
+      generated: currentTrip,
     }))
-    toast.success('Trip saved to your dashboard!')
-  }
+      .unwrap()
+      .then((saved) => {
+        dispatch(clearCurrentTrip())
+        navigate(`/itinerary/${saved.id}`, { replace: true })
+      })
+      .catch((err) => {
+        console.error('[PlannerPage] persist failed:', err)
+        toast.error('Could not save trip — check your connection.')
+        persistingRef.current = false
+      })
+  }, [currentTrip, loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRegenerate = () => {
     dispatch(clearError())
     hasGenerated.current = true
+    persistingRef.current = false
     dispatch(generateItineraryStreaming(onboardingData))
-  }
-
-  const handlePlanAnother = () => {
-    dispatch(clearCurrentTrip())
-    navigate('/plan')
   }
 
   // ── Error state ─────────────────────────────────────────────────────────────
@@ -194,57 +177,43 @@ const PlannerPage = () => {
                 </div>
               }
             />
-            <details className="mt-4">
-              <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">
-                Technical details
-              </summary>
-              <pre className="mt-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg overflow-auto max-h-28 whitespace-pre-wrap">
-                {error}
-              </pre>
-            </details>
           </Card>
         </div>
       </div>
     )
   }
 
-  // During streaming AND after completion, the hero is always visible
   const partialDays = loading ? (streamingProgress?.days || []) : (currentTrip?.days || [])
   const expectedDays = onboardingData.duration || 5
   const skeletonCount = loading ? Math.max(1, expectedDays - partialDays.length) : 0
 
-  // ── Nothing yet (before streamStarted fires) ────────────────────────────────
   if (!loading && !currentTrip) return null
+
+  const isSaving = !loading && !!currentTrip
 
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="pt-16 md:pt-20">
         <PageHeader
           variant="hero"
-          eyebrow={loading ? 'GENERATING' : 'YOUR ITINERARY'}
+          eyebrow={loading ? 'GENERATING' : 'SAVING…'}
           title={`${onboardingData.duration} days in ${onboardingData.destination}`}
           description={
             loading
               ? 'Building your personalized itinerary...'
-              : `${onboardingData.duration} days · ${onboardingData.travelers} travelers · ${onboardingData.budget} budget`
+              : 'Saving your trip to your account…'
           }
           actions={
-            !loading && (
-              <>
-                <Button variant="accent" icon={Download} onClick={handleSaveTrip}>
-                  Save trip
-                </Button>
-                <Button variant="hero" icon={RefreshCw} onClick={handleRegenerate}>
-                  Regenerate
-                </Button>
-              </>
+            isSaving && (
+              <Button variant="hero" icon={RefreshCw} onClick={handleRegenerate}>
+                Regenerate instead
+              </Button>
             )
           }
         />
       </div>
 
       <div className="container-custom py-10">
-        {/* Streaming status ticker */}
         {loading && (
           <div className="flex items-center gap-3 mb-8">
             <span className="w-2 h-2 bg-primary-600 rounded-full animate-pulse flex-shrink-0" />
@@ -256,11 +225,7 @@ const PlannerPage = () => {
           </div>
         )}
 
-        {/* Context summary — shown only after completion */}
-        {!loading && <ContextCard data={onboardingData} />}
-
         <div className="grid lg:grid-cols-12 gap-8">
-          {/* Day timeline */}
           <div className="lg:col-span-8 space-y-4">
             {partialDays.map((day, i) => (
               <TimelineDay key={i} day={day} index={i} defaultOpen={i === 0} />
@@ -270,21 +235,14 @@ const PlannerPage = () => {
             ))}
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 lg:self-start">
             <SidebarCards trip={loading ? streamingProgress : currentTrip} />
-            {/* Refinement panel — appears after generation completes */}
-            {!loading && currentTrip && <RefinementPanel />}
           </div>
         </div>
 
-        {/* Bottom CTA — shown only after completion */}
-        {!loading && currentTrip && (
-          <div className="mt-12 pt-8 border-t border-slate-200 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button variant="accent" icon={Download} onClick={handleSaveTrip}>
-              Save to dashboard
-            </Button>
-            <Button variant="outline" icon={ArrowLeft} onClick={handlePlanAnother}>
+        {isSaving && (
+          <div className="mt-12 pt-8 border-t border-slate-200 flex justify-center">
+            <Button variant="outline" icon={ArrowLeft} onClick={() => navigate('/plan')}>
               Plan another trip
             </Button>
           </div>

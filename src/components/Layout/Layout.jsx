@@ -4,16 +4,16 @@ import { useSelector, useDispatch } from 'react-redux'
 import Navbar from './Navbar'
 import Footer from './Footer'
 import ChatBot from '../ChatBot/ChatBot'
-import { loadUserTrips, clearSavedTrips } from '../../store/slices/tripSlice'
+import { clearSavedTrips } from '../../store/slices/tripSlice'
 
 const Layout = () => {
   const dispatch = useDispatch()
   const { isAuthenticated } = useSelector((state) => state.auth)
 
+  // Clear cached trips from Redux when the user signs out.
+  // Trip loading on sign-in is handled by ClerkSyncBridge (fetchSavedTrips).
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(loadUserTrips())
-    } else {
+    if (!isAuthenticated) {
       dispatch(clearSavedTrips())
     }
   }, [isAuthenticated, dispatch])

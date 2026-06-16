@@ -1,8 +1,8 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { deleteTrip, duplicateTrip } from '../../store/slices/tripSlice'
-import { Compass, Plus, Lock } from 'lucide-react'
+import { removeTrip, cloneTrip } from '../../store/slices/tripSlice'
+import { Compass, Plus, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import usePageTitle from '../../hooks/usePageTitle'
 import PageHeader from '../../components/UI/PageHeader'
@@ -10,28 +10,33 @@ import StatsBand from '../../components/UI/StatsBand'
 import Button from '../../components/UI/Button'
 import EmptyState from '../../components/UI/EmptyState'
 import TripCard from '../../components/Cards/TripCard'
+import SkeletonCard from '../../components/UI/SkeletonCard'
+import LocalStorageMigrationBanner from '../../components/Migration/LocalStorageMigrationBanner'
 import destinationsDatabase from '../../constants/destinations'
 
 const DashboardPage = () => {
   usePageTitle('My Trips')
-  const { savedTrips } = useSelector(state => state.trip)
-  const { isAuthenticated } = useSelector(state => state.auth)
+  const { savedTrips, tripsLoading, tripsError } = useSelector(state => state.trip)
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const handleDelete = (trip) => {
     if (!window.confirm(`Delete "${trip.destination || 'this trip'}"? This cannot be undone.`)) return
-    dispatch(deleteTrip(trip.id))
-    toast.success('Trip deleted.')
+    dispatch(removeTrip(trip.id))
+      .unwrap()
+      .then(() => toast.success('Trip deleted.'))
+      .catch((err) => toast.error(err || 'Failed to delete trip'))
   }
 
   const handleDuplicate = (tripId) => {
-    dispatch(duplicateTrip(tripId))
-    toast.success('Trip duplicated.')
+    dispatch(cloneTrip(tripId))
+      .unwrap()
+      .then(() => toast.success('Trip duplicated.'))
+      .catch((err) => toast.error(err || 'Failed to duplicate trip'))
   }
 
   const handleView = (trip) => {
-    navigate(`/itinerary/${trip.id}`, { state: { trip } })
+    navigate(`/itinerary/${trip.id}`)
   }
 
   const getDestImage = (trip) => {
@@ -42,8 +47,8 @@ const DashboardPage = () => {
   }
 
   const totalCost = savedTrips.reduce((sum, trip) => {
-    if (!trip.budget || typeof trip.budget !== 'object') return sum
-    return sum + Object.values(trip.budget).reduce((a, b) => a + b, 0)
+    if (!trip.budgetBreakdown || typeof trip.budgetBreakdown !== 'object') return sum
+    return sum + Object.values(trip.budgetBreakdown).reduce((a, b) => a + b, 0)
   }, 0)
 
   const uniqueDestinations = new Set(savedTrips.map(t => t.destination).filter(Boolean)).size
@@ -54,21 +59,6 @@ const DashboardPage = () => {
     { value: totalCost > 0 ? `$${totalCost.toLocaleString()}` : '—', label: 'Total budgeted' },
     { value: uniqueDestinations.toString(), label: 'Destinations' },
   ]
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 pt-16 md:pt-20 flex items-center justify-center">
-        <div className="container-custom max-w-md text-center">
-          <EmptyState
-            icon={Lock}
-            title="Login required"
-            description="Please sign in to view your saved trips."
-            action={<Button variant="primary" onClick={() => navigate('/login')}>Sign in</Button>}
-          />
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -88,7 +78,20 @@ const DashboardPage = () => {
       <StatsBand variant="light" stats={stats} />
 
       <div className="container-custom py-10">
-        {savedTrips.length === 0 ? (
+        <LocalStorageMigrationBanner />
+
+        {tripsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => <SkeletonCard key={i} showHeader lines={4} />)}
+          </div>
+        ) : tripsError ? (
+          <EmptyState
+            icon={AlertCircle}
+            title="Failed to load trips"
+            description={tripsError}
+            action={<Button variant="primary" onClick={() => window.location.reload()}>Retry</Button>}
+          />
+        ) : savedTrips.length === 0 ? (
           <EmptyState
             icon={Compass}
             title="No trips yet"
