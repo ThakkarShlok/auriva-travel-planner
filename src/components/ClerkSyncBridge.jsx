@@ -1,12 +1,20 @@
 import { useEffect, useRef } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useAuth } from '@clerk/clerk-react'
 import { useDispatch } from 'react-redux'
 import { setUser, clearUser } from '../store/authSlice'
+import { setTokenGetter } from '../store'
+import { fetchSavedTrips } from '../store/slices/tripSlice'
 
 const ClerkSyncBridge = () => {
   const { isLoaded, isSignedIn, user } = useUser()
+  const { getToken } = useAuth()
   const dispatch = useDispatch()
   const syncedUserIdRef = useRef(null)
+
+  // Keep Redux tokenGetter current whenever getToken identity changes
+  useEffect(() => {
+    setTokenGetter(getToken)
+  }, [getToken])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -25,9 +33,10 @@ const ClerkSyncBridge = () => {
       }
       dispatch(setUser(payload))
 
-      // JIT sync to Neon — fires once per unique user ID per session
       if (syncedUserIdRef.current !== user.id) {
         syncedUserIdRef.current = user.id
+
+        // JIT sync to Neon — fires once per unique user ID per session
         fetch('/api/sync-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -41,6 +50,9 @@ const ClerkSyncBridge = () => {
         }).catch(err => {
           console.warn('[ClerkSyncBridge] sync-user failed:', err.message)
         })
+
+        // Load this user's saved trips from Neon
+        dispatch(fetchSavedTrips())
       }
     } else {
       syncedUserIdRef.current = null

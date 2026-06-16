@@ -1,4 +1,7 @@
-import { callGroq, assertGroqKey } from './_lib/groq.js'
+import { callGroq } from './_lib/groq.js'
+import { requireUser, AuthError } from './_lib/auth.js'
+import { getTripWithDays, updateTripDays, updateTripMetadata } from '../src/db/queries/trips.js'
+import { appendMessage } from '../src/db/queries/conversations.js'
 
 const REFINE_SYSTEM_PROMPT = `You are an expert travel planner refining an existing itinerary based on user feedback. You will be given the current itinerary as JSON and the user's modification request.
 
@@ -12,29 +15,42 @@ Return ONLY a JSON object with the FULL updated itinerary in this exact schema:
   "tips": ["string"]
 }
 
-Preserve unchanged days exactly as-is. Only modify what the user specifically asked about. If they say "make day 2 less hectic," return the same Day 1, 3, 4... with only Day 2 modified. All monetary values in USD. Real place names only. No markdown fences.`
+Preserve unchanged days exactly as-is. Only modify what the user specifically asked about. All monetary values in USD. Real place names only. No markdown fences.`
 
 export default async function handler(req, res) {
   try {
+    const user = await requireUser(req)
+
     if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed', code: 'MethodNotAllowed' })
+      return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    assertGroqKey()
+    const { tripId, instruction } = req.body ?? {}
 
-    const { itinerary, instruction, context } = req.body ?? {}
-
-    if (!itinerary || typeof itinerary !== 'object') {
-      return res.status(400).json({ error: 'itinerary is required', code: 'ValidationError' })
+    if (!tripId) {
+      return res.status(400).json({ error: 'tripId is required' })
     }
     if (!instruction || typeof instruction !== 'string' || !instruction.trim()) {
-      return res.status(400).json({ error: 'instruction is required', code: 'ValidationError' })
+      return res.status(400).json({ error: 'instruction is required' })
     }
     if (instruction.length > 1000) {
-      return res.status(400).json({ error: 'instruction too long (max 1000 chars)', code: 'ValidationError' })
+      return res.status(400).json({ error: 'instruction too long (max 1000 chars)' })
     }
 
-    const userPrompt = `Current itinerary:\n${JSON.stringify(itinerary)}\n\nDestination: ${context?.destination || 'Unknown'}, ${context?.duration || '?'} days.\n\nUser request: ${instruction.trim()}\n\nReturn the full updated itinerary as JSON.`
+    // Load trip from DB — confirms ownership and provides current state for AI context
+    const trip = await getTripWithDays(tripId, user.id)
+    if (!trip) return res.status(404).json({ error: 'Trip not found' })
+
+    const currentItinerary = {
+      overview: trip.overview,
+      days: trip.days.map(d => ({ title: d.title, activities: d.activities })),
+      budget: trip.budgetBreakdown,
+      hotels: trip.hotels,
+      packing: trip.packing,
+      tips: trip.tips,
+    }
+
+    const userPrompt = `Current itinerary:\n${JSON.stringify(currentItinerary)}\n\nDestination: ${trip.destination}, ${trip.duration} days.\n\nUser request: ${instruction.trim()}\n\nReturn the full updated itinerary as JSON.`
 
     const content = await callGroq({
       model: 'llama-3.3-70b-versatile',
@@ -48,23 +64,43 @@ export default async function handler(req, res) {
       timeoutMs: 30000,
     })
 
-    let parsed
+    let updated
     try {
-      parsed = JSON.parse(content)
+      updated = JSON.parse(content)
     } catch {
-      return res.status(502).json({ error: 'AI returned malformed JSON', code: 'BadJSON' })
+      return res.status(502).json({ error: 'AI returned malformed JSON' })
     }
 
-    console.log('[api] /api/refine-itinerary success')
-    return res.status(200).json(parsed)
+    // Persist updated itinerary and conversation turn in parallel
+    await Promise.all([
+      updateTripDays(tripId, user.id, updated.days),
+      updateTripMetadata(tripId, user.id, {
+        overview: updated.overview,
+        budgetBreakdown: updated.budget,
+        hotels: updated.hotels,
+        packing: updated.packing,
+        tips: updated.tips,
+      }),
+      appendMessage({ tripId, userId: user.id, role: 'user', content: instruction.trim() }),
+      appendMessage({
+        tripId,
+        userId: user.id,
+        role: 'assistant',
+        content: `Updated itinerary: "${instruction.trim().slice(0, 100)}"`,
+      }),
+    ])
+
+    console.log('[api] /api/refine-itinerary success — trip', tripId)
+    return res.status(200).json({ itinerary: updated })
 
   } catch (error) {
+    if (error instanceof AuthError) {
+      return res.status(error.status).json({ error: error.message, code: 'AuthError' })
+    }
     console.error('[api error refine]', error?.name, error?.message)
-    const status = error?.status || 500
-    return res.status(status).json({
+    return res.status(error?.status || 500).json({
       error: error?.message || 'Unknown server error',
-      code: error?.code || error?.name || 'UnknownError',
-      timestamp: new Date().toISOString(),
+      code: error?.code || 'UnknownError',
     })
   }
 }

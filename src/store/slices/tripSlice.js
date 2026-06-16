@@ -1,7 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { generateItinerary as serviceGenerateItinerary } from '../../services/grokService'
-import { streamItinerary, refineItinerary } from '../../services/streamingService'
+import { streamItinerary } from '../../services/streamingService'
 import { storage } from '../../services/localStorageService'
+import {
+  listTrips,
+  saveTrip as apiSaveTrip,
+  deleteTrip as apiDeleteTrip,
+  duplicateTrip as apiDuplicateTrip,
+} from '../../services/tripsService'
 
 const loadOnboardingData = () =>
   storage.get(storage.keys.ONBOARDING) || {
@@ -14,18 +19,6 @@ const loadOnboardingData = () =>
 
 // ─── Thunks ──────────────────────────────────────────────────────────────────
 
-export const generateItinerary = createAsyncThunk(
-  'trip/generate',
-  async (preferences, { rejectWithValue, signal }) => {
-    try {
-      return await serviceGenerateItinerary(preferences, { signal })
-    } catch (error) {
-      if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') throw error
-      return rejectWithValue(error.message)
-    }
-  }
-)
-
 export const generateItineraryStreaming = createAsyncThunk(
   'trip/generateStreaming',
   async (preferences, { dispatch, signal, rejectWithValue }) => {
@@ -34,20 +27,13 @@ export const generateItineraryStreaming = createAsyncThunk(
 
       streamItinerary(preferences, {
         signal,
-        onPartialJson: (partial) => {
-          dispatch(tripSlice.actions.streamProgress(partial))
-        },
-        onToken: (_, accumulated) => {
-          dispatch(tripSlice.actions.streamTokenCount(accumulated.length))
-        },
+        onPartialJson: (partial) => dispatch(tripSlice.actions.streamProgress(partial)),
+        onToken: (_, accumulated) => dispatch(tripSlice.actions.streamTokenCount(accumulated.length)),
         onDone: (final) => {
           dispatch(tripSlice.actions.streamCompleted(final))
           resolve(final)
         },
         onError: (msg) => {
-          // State is managed externally:
-          // - clean abort → PlannerPage cleanup dispatches streamAborted synchronously
-          // - real error  → generateItineraryStreaming.rejected extraReducer sets error
           reject(new Error(msg))
         },
       })
@@ -55,102 +41,71 @@ export const generateItineraryStreaming = createAsyncThunk(
   }
 )
 
-export const refineCurrentItinerary = createAsyncThunk(
-  'trip/refine',
-  async (instruction, { getState, rejectWithValue }) => {
-    const state = getState().trip
-    if (!state.currentTrip) return rejectWithValue('No current itinerary to refine')
+// Fetch saved trips from Neon via API
+export const fetchSavedTrips = createAsyncThunk(
+  'trip/fetchSaved',
+  async (_, { rejectWithValue, extra }) => {
     try {
-      const updated = await refineItinerary(
-        state.currentTrip,
-        instruction,
-        {
-          destination: state.onboardingData.destination,
-          duration: state.onboardingData.duration,
-        }
-      )
-      return { updated, instruction }
+      return await listTrips(extra.getToken)
     } catch (error) {
       return rejectWithValue(error.message)
     }
   }
 )
 
-export const loadUserTrips = createAsyncThunk(
-  'trip/loadUserTrips',
-  async (_, { getState }) => {
-    const userId = getState().auth.user?.id
-    if (!userId) return []
-    return storage.get(storage.getTripsKey(userId)) || []
-  }
-)
-
-export const saveTrip = createAsyncThunk(
-  'trip/save',
-  async (tripData, { getState }) => {
-    const userId = getState().auth.user?.id
-    const newTrip = {
-      ...tripData,
-      id: crypto.randomUUID(),
-      savedAt: new Date().toISOString(),
+// Persist a newly generated trip to Neon
+export const persistTrip = createAsyncThunk(
+  'trip/persist',
+  async ({ preferences, generated }, { rejectWithValue, extra }) => {
+    try {
+      return await apiSaveTrip({ preferences, generated }, extra.getToken)
+    } catch (error) {
+      return rejectWithValue(error.message)
     }
-    const key = storage.getTripsKey(userId)
-    const existing = storage.get(key) || []
-    const updated = [newTrip, ...existing]
-    storage.set(key, updated)
-    return updated
   }
 )
 
-export const deleteTrip = createAsyncThunk(
-  'trip/delete',
-  async (tripId, { getState }) => {
-    const userId = getState().auth.user?.id
-    const key = storage.getTripsKey(userId)
-    const existing = storage.get(key) || []
-    const updated = existing.filter((t) => t.id !== tripId)
-    storage.set(key, updated)
-    return updated
-  }
-)
-
-export const duplicateTrip = createAsyncThunk(
-  'trip/duplicate',
-  async (tripId, { getState }) => {
-    const userId = getState().auth.user?.id
-    const { savedTrips } = getState().trip
-    const trip = savedTrips.find((t) => t.id === tripId)
-    if (!trip) throw new Error('Trip not found')
-    const newTrip = {
-      ...trip,
-      id: crypto.randomUUID(),
-      destination: `${trip.destination} (copy)`,
-      savedAt: new Date().toISOString(),
+// Delete a trip from Neon
+export const removeTrip = createAsyncThunk(
+  'trip/remove',
+  async (tripId, { rejectWithValue, extra }) => {
+    try {
+      await apiDeleteTrip(tripId, extra.getToken)
+      return tripId
+    } catch (error) {
+      return rejectWithValue(error.message)
     }
-    const key = storage.getTripsKey(userId)
-    const existing = storage.get(key) || []
-    const updated = [newTrip, ...existing]
-    storage.set(key, updated)
-    return updated
+  }
+)
+
+// Duplicate a trip in Neon
+export const cloneTrip = createAsyncThunk(
+  'trip/clone',
+  async (tripId, { rejectWithValue, extra }) => {
+    try {
+      return await apiDuplicateTrip(tripId, extra.getToken)
+    } catch (error) {
+      return rejectWithValue(error.message)
+    }
   }
 )
 
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const initialState = {
+  // In-flight streaming generation
   currentTrip: null,
-  savedTrips: [],
   loading: false,
   error: null,
   currentRequestId: null,
-  onboardingData: loadOnboardingData(),
-  // Streaming state
   streamingProgress: null,
   streamingTokenCount: 0,
-  // Refinement state
-  refinementInProgress: false,
-  refinementError: null,
-  conversationHistory: [],
+  // Saved trips (from Neon via API)
+  savedTrips: [],
+  tripsLoading: false,
+  tripsError: null,
+  // Onboarding preferences (localStorage — pre-generation state, not trip data)
+  onboardingData: loadOnboardingData(),
 }
 
 const tripSlice = createSlice({
@@ -165,7 +120,6 @@ const tripSlice = createSlice({
       state.currentTrip = null
       state.streamingProgress = null
       state.streamingTokenCount = 0
-      state.conversationHistory = []
     },
     clearError: (state) => {
       state.error = null
@@ -173,17 +127,13 @@ const tripSlice = createSlice({
     clearSavedTrips: (state) => {
       state.savedTrips = []
     },
-    clearConversation: (state) => {
-      state.conversationHistory = []
-    },
-    // Streaming actions — dispatched directly from within the streaming thunk
+    // Streaming actions — dispatched synchronously from within the streaming thunk
     streamStarted: (state) => {
       state.loading = true
       state.error = null
       state.streamingProgress = null
       state.streamingTokenCount = 0
       state.currentTrip = null
-      state.conversationHistory = []
     },
     streamProgress: (state, action) => {
       state.streamingProgress = action.payload
@@ -204,89 +154,38 @@ const tripSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ── Non-streaming generation (fallback path) ──────────────────────────
-      .addCase(generateItinerary.pending, (state, action) => {
-        state.loading = true
-        state.error = null
-        state.currentRequestId = action.meta.requestId
-      })
-      .addCase(generateItinerary.fulfilled, (state, action) => {
-        if (state.currentRequestId !== action.meta.requestId) return
-        state.loading = false
-        state.currentTrip = action.payload
-        state.currentRequestId = null
-      })
-      .addCase(generateItinerary.rejected, (state, action) => {
-        if (state.currentRequestId !== action.meta.requestId) return
-        if (action.meta.aborted) {
-          state.loading = false
-          state.currentRequestId = null
-          return
-        }
-        state.loading = false
-        state.error = action.payload
-        state.currentRequestId = null
-      })
       // ── Streaming generation ──────────────────────────────────────────────
-      // Primary state updates are from synchronous actions (streamStarted/streamCompleted/streamAborted).
-      // The thunk's rejected case is the safety net for failures before any callback fires.
       .addCase(generateItineraryStreaming.rejected, (state, action) => {
-        if (action.meta.aborted) return // handled by streamAborted
-        if (!state.loading) return      // already handled (e.g., streamCompleted fired)
+        if (action.meta.aborted) return
+        if (!state.loading) return
         state.loading = false
         state.error = action.payload || 'Streaming failed'
         state.streamingProgress = null
       })
-      // ── Refinement ────────────────────────────────────────────────────────
-      .addCase(refineCurrentItinerary.pending, (state, action) => {
-        state.refinementInProgress = true
-        state.refinementError = null
-        // Optimistically add user message to conversation
-        state.conversationHistory = [
-          ...state.conversationHistory,
-          {
-            role: 'user',
-            content: action.meta.arg,
-            timestamp: new Date().toISOString(),
-          },
-        ]
+      // ── Fetch saved trips ─────────────────────────────────────────────────
+      .addCase(fetchSavedTrips.pending, (state) => {
+        state.tripsLoading = true
+        state.tripsError = null
       })
-      .addCase(refineCurrentItinerary.fulfilled, (state, action) => {
-        state.refinementInProgress = false
-        state.currentTrip = action.payload.updated
-        state.conversationHistory = [
-          ...state.conversationHistory,
-          {
-            role: 'assistant',
-            content: 'Updated your itinerary ✓',
-            timestamp: new Date().toISOString(),
-          },
-        ]
-      })
-      .addCase(refineCurrentItinerary.rejected, (state, action) => {
-        state.refinementInProgress = false
-        state.refinementError = action.payload
-        state.conversationHistory = [
-          ...state.conversationHistory,
-          {
-            role: 'assistant',
-            content: `Something went wrong: ${action.payload}`,
-            timestamp: new Date().toISOString(),
-          },
-        ]
-      })
-      // ── Persistence thunks ────────────────────────────────────────────────
-      .addCase(loadUserTrips.fulfilled, (state, action) => {
+      .addCase(fetchSavedTrips.fulfilled, (state, action) => {
+        state.tripsLoading = false
         state.savedTrips = action.payload
       })
-      .addCase(saveTrip.fulfilled, (state, action) => {
-        state.savedTrips = action.payload
+      .addCase(fetchSavedTrips.rejected, (state, action) => {
+        state.tripsLoading = false
+        state.tripsError = action.payload || 'Failed to load trips'
       })
-      .addCase(deleteTrip.fulfilled, (state, action) => {
-        state.savedTrips = action.payload
+      // ── Persist new trip ──────────────────────────────────────────────────
+      .addCase(persistTrip.fulfilled, (state, action) => {
+        state.savedTrips = [action.payload, ...state.savedTrips]
       })
-      .addCase(duplicateTrip.fulfilled, (state, action) => {
-        state.savedTrips = action.payload
+      // ── Remove trip ───────────────────────────────────────────────────────
+      .addCase(removeTrip.fulfilled, (state, action) => {
+        state.savedTrips = state.savedTrips.filter(t => t.id !== action.payload)
+      })
+      // ── Clone trip ────────────────────────────────────────────────────────
+      .addCase(cloneTrip.fulfilled, (state, action) => {
+        state.savedTrips = [action.payload, ...state.savedTrips]
       })
   },
 })
@@ -296,7 +195,6 @@ export const {
   clearCurrentTrip,
   clearError,
   clearSavedTrips,
-  clearConversation,
   streamStarted,
   streamProgress,
   streamTokenCount,
