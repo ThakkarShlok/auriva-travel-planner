@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { mailto } from '../../constants/contact';
 import {
   Compass, Globe, Users, Star, Heart, Zap, Sparkles,
   ChevronRight, Rocket, Shield, Github, Linkedin, Mail,
@@ -275,7 +276,7 @@ const AboutPage = () => {
                       <Linkedin className="w-4 h-4" />
                       <span className="text-sm font-medium">LinkedIn</span>
                     </a>
-                    <a href="mailto:thakkar.shlok2120@gmail.com" className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <a href={mailto()} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
                       <Mail className="w-4 h-4" />
                       <span className="text-sm font-medium">Email</span>
                     </a>

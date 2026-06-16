@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Sparkles, Github, Linkedin, Mail, Compass, Calendar, LayoutDashboard, Globe, Info, MessageCircle } from 'lucide-react';
+import { CONTACT, mailto, whatsappLink } from '../../constants/contact';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -24,9 +25,10 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Github, href: 'https://github.com/ThakkarShlok', label: 'GitHub', bg: 'hover:bg-gray-700' },
-    { icon: Linkedin, href: 'https://www.linkedin.com/in/shlok-thakkar-58a033354', label: 'LinkedIn', bg: 'hover:bg-blue-700' },
-    { icon: Mail, href: 'mailto:thakkar.shlok2120@gmail.com', label: 'Email', bg: 'hover:bg-red-700' },
+    { icon: Github,         href: 'https://github.com/ThakkarShlok',                            label: 'GitHub',    bg: 'hover:bg-gray-700' },
+    { icon: Linkedin,       href: 'https://www.linkedin.com/in/shlok-thakkar-58a033354',        label: 'LinkedIn',  bg: 'hover:bg-blue-700' },
+    { icon: Mail,           href: mailto(),                                                       label: 'Email',     bg: 'hover:bg-red-700' },
+    { icon: MessageCircle,  href: whatsappLink(),                                                 label: 'WhatsApp',  bg: 'hover:bg-green-700' },
   ];
 
   return (
