@@ -55,7 +55,8 @@ function wrapRes(res) {
 }
 
 function apiPlugin() {
-  const routes = {}
+  const exactRoutes = {}
+  const patternRoutes = [] // [{ regex, paramNames, handler }] — tried in registration order
 
   return {
     name: 'local-api',
@@ -63,18 +64,42 @@ function apiPlugin() {
       await loadEnvLocal()
 
       const apiRoutes = [
+        // Exact routes — registered first, matched first
         { route: 'health',                    file: 'health' },
         { route: 'generate-itinerary',        file: 'generate-itinerary' },
         { route: 'generate-itinerary-stream', file: 'generate-itinerary-stream' },
         { route: 'refine-itinerary',          file: 'refine-itinerary' },
         { route: 'chat',                      file: 'chat' },
         { route: 'webhooks/clerk',            file: 'webhooks/clerk' },
-        { route: 'sync-user',               file: 'sync-user' },
+        { route: 'sync-user',                 file: 'sync-user' },
+        // Trips — exact before pattern so /trips/duplicate is not captured by /trips/:id
+        { route: 'trips',                     file: 'trips/index' },
+        { route: 'trips/duplicate',           file: 'trips/duplicate' },
+        { route: 'trips/:id',                 file: 'trips/[id]' },
+        // Conversations
+        { route: 'conversations/:tripId',     file: 'conversations/[tripId]' },
+        // Sharing — exact routes (slug passed as query param, not URL segment)
+        { route: 'share',                     file: 'share' },
+        { route: 'public-trip',               file: 'public-trip' },
+        // PDF download — exact route (email is now client-side via EmailJS)
+        { route: 'download-pdf',              file: 'download-pdf' },
       ]
+
       for (const { route, file } of apiRoutes) {
         try {
           const mod = await import(pathToFileURL(resolve(__dirname, `api/${file}.js`)).href)
-          routes[`/api/${route}`] = mod.default
+          const routePath = `/api/${route}`
+          if (route.includes(':')) {
+            // Dynamic route — build a regex from :param segments
+            const paramNames = []
+            const regexStr = routePath.replace(/:([^/]+)/g, (_, name) => {
+              paramNames.push(name)
+              return '([^/]+)'
+            })
+            patternRoutes.push({ regex: new RegExp(`^${regexStr}$`), paramNames, handler: mod.default })
+          } else {
+            exactRoutes[routePath] = mod.default
+          }
           console.log(`  \x1b[32m✓\x1b[0m /api/${route}`)
         } catch (err) {
           console.error(`  \x1b[31m✗\x1b[0m /api/${route}: ${err.message}`)
@@ -89,16 +114,10 @@ function apiPlugin() {
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
           })
           res.end()
-          return
-        }
-
-        const handler = routes[pathname]
-        if (!handler) {
-          sendJson(res, 404, { error: `No handler for ${pathname}` })
           return
         }
 
@@ -109,10 +128,35 @@ function apiPlugin() {
           try { if (bodyBuf.length) body = JSON.parse(bodyBuf.toString()) } catch {}
 
           const url = new URL(req.url, 'http://localhost')
+          let baseQuery = Object.fromEntries(url.searchParams)
+
+          // 1. Exact match
+          let handler = exactRoutes[pathname]
+          let query = baseQuery
+
+          // 2. Pattern match (tried in registration order — exact-before-pattern ordering above handles priority)
+          if (!handler) {
+            for (const { regex, paramNames, handler: h } of patternRoutes) {
+              const match = pathname.match(regex)
+              if (match) {
+                handler = h
+                const params = {}
+                paramNames.forEach((name, i) => { params[name] = match[i + 1] })
+                query = { ...baseQuery, ...params }
+                break
+              }
+            }
+          }
+
+          if (!handler) {
+            sendJson(res, 404, { error: `No handler for ${pathname}` })
+            return
+          }
+
           const vReq = Object.assign(req, {
-            query: Object.fromEntries(url.searchParams),
+            query,
             body,
-            rawBody: bodyBuf.toString(), // raw payload string for webhook signature verification
+            rawBody: bodyBuf.toString(),
             cookies: {},
           })
 
@@ -120,7 +164,6 @@ function apiPlugin() {
         })().catch(err => {
           console.error(`[api] ${pathname}:`, err.message)
           if (res.headersSent) {
-            // Streaming response already started — close it cleanly
             try { res.end() } catch {}
           } else {
             sendJson(res, 500, { error: err.message })
