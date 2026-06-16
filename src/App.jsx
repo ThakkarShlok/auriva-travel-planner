@@ -18,6 +18,7 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
 const DiscoverPage = lazy(() => import('./pages/Discover/DiscoverPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const PublicTripPage = lazy(() => import('./pages/PublicTrip/PublicTripPage'))
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="discover" element={<DiscoverPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="share/:slug" element={<PublicTripPage />} />
 
           {/* Protected routes */}
           <Route path="planner" element={
