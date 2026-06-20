@@ -266,7 +266,7 @@ function DayPage({ day, dayNumber }) {
           ? React.createElement(Text, { style: styles.activityDescription }, activity.description)
           : null,
         activity.cost > 0
-          ? React.createElement(Text, { style: styles.activityCost }, `~$${activity.cost}`)
+          ? React.createElement(Text, { style: styles.activityCost }, `~$${activity.cost} (USD)`)
           : null,
       ),
     )
@@ -303,7 +303,7 @@ function SummaryPage({ trip }) {
           React.createElement(Text, { style: styles.budgetKey },
             key.charAt(0).toUpperCase() + key.slice(1),
           ),
-          React.createElement(Text, { style: styles.budgetValue }, `$${value}`),
+          React.createElement(Text, { style: styles.budgetValue }, `$${value} (USD)`),
         )
       ),
     )

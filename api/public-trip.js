@@ -24,6 +24,7 @@ export default async function handler(req, res) {
       hotels: trip.hotels,
       packing: trip.packing,
       tips: trip.tips,
+      weather: trip.weather,
       days: trip.days.map(d => ({
         dayNumber: d.dayNumber,
         title: d.title,
