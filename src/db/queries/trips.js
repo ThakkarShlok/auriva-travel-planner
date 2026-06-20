@@ -42,6 +42,8 @@ export async function createTrip({ userId, preferences, generated }) {
     hotels: generated.hotels ?? null,
     packing: generated.packing ?? null,
     tips: generated.tips ?? null,
+    weather: generated.weather ?? null,
+    startDate: preferences.startDate ?? null,
   }).returning()
 
   if (Array.isArray(generated.days) && generated.days.length > 0) {
@@ -84,6 +86,42 @@ export async function updateTripDays(tripId, userId, daysData) {
     .where(eq(trips.id, tripId))
 
   return trip
+}
+
+// Update a single day's activities and title (companion mode patch — no full-days rewrite).
+export async function updateTripDay(tripId, userId, dayIndex, dayData) {
+  const trip = await getTripById(tripId, userId)
+  if (!trip) return null
+
+  const dayNumber = dayIndex + 1
+  const [existing] = await db.select()
+    .from(tripDays)
+    .where(and(eq(tripDays.tripId, tripId), eq(tripDays.dayNumber, dayNumber)))
+    .limit(1)
+  if (!existing) return null
+
+  const [updated] = await db.update(tripDays)
+    .set({
+      title: dayData.title ?? existing.title,
+      activities: dayData.activities ?? existing.activities,
+    })
+    .where(eq(tripDays.id, existing.id))
+    .returning()
+
+  await db.update(trips)
+    .set({ updatedAt: new Date() })
+    .where(eq(trips.id, tripId))
+
+  return updated
+}
+
+// Persist the packing checklist (converted from static string array by user action).
+export async function updateTripPackingChecklist(tripId, userId, checklist) {
+  const [updated] = await db.update(trips)
+    .set({ packingChecklist: checklist, updatedAt: new Date() })
+    .where(and(eq(trips.id, tripId), eq(trips.userId, userId)))
+    .returning()
+  return updated ?? null
 }
 
 export async function updateTripMetadata(tripId, userId, { overview, budgetBreakdown, hotels, packing, tips }) {
