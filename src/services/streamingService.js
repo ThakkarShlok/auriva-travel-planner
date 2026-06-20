@@ -11,8 +11,9 @@ import { parse as parsePartialJson } from 'partial-json'
  * @param {(partial: object) => void} opts.onPartialJson - Called when partial JSON is parseable
  * @param {(final: object) => void} opts.onDone - Called when streaming is complete with final JSON
  * @param {(msg: string) => void} opts.onError - Called on error ('aborted' for clean abort)
+ * @param {(weather: object|null) => void} opts.onWeather - Called once with the forecast (or null) before generation starts
  */
-export async function streamItinerary(preferences, { signal, onToken, onPartialJson, onDone, onError } = {}) {
+export async function streamItinerary(preferences, { signal, onToken, onPartialJson, onDone, onError, onWeather } = {}) {
   let response
   try {
     response = await fetch('/api/generate-itinerary-stream', {
@@ -103,6 +104,8 @@ export async function streamItinerary(preferences, { signal, onToken, onPartialJ
           }
         } else if (eventName === 'error') {
           onError?.(data.error || 'Unknown stream error')
+        } else if (eventName === 'weather') {
+          onWeather?.(data ?? null)
         }
       }
     }
