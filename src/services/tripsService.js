@@ -1,3 +1,5 @@
+import { enqueue } from '../utils/mutationQueue.js'
+
 // All functions take a `getToken` argument — components call useAuth().getToken() and pass it in.
 // This keeps hooks out of the service layer.
 
@@ -131,6 +133,44 @@ async function triggerDownload(response) {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+}
+
+// ─── Companion mode ───────────────────────────────────────────────────────────
+
+export async function patchTripDay(tripId, dayIndex, day, getToken) {
+  if (!navigator.onLine) {
+    enqueue({
+      dedupeKey: `${tripId}:day:${dayIndex}`,
+      endpoint: `/api/trips/${tripId}`,
+      method: 'PATCH',
+      body: { dayIndex, day },
+    })
+    return { offline: true }
+  }
+
+  const data = await authFetch(`/api/trips/${tripId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ dayIndex, day }),
+  }, getToken)
+  return data.trip
+}
+
+export async function patchPackingChecklist(tripId, checklist, getToken) {
+  if (!navigator.onLine) {
+    enqueue({
+      dedupeKey: `${tripId}:packing`,
+      endpoint: `/api/trips/${tripId}`,
+      method: 'PATCH',
+      body: { packingChecklist: checklist },
+    })
+    return { offline: true }
+  }
+
+  const data = await authFetch(`/api/trips/${tripId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ packingChecklist: checklist }),
+  }, getToken)
+  return data.trip
 }
 
 // No auth — public endpoint

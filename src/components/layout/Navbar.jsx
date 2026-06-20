@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { Compass, Calendar, LayoutDashboard, Menu, X, Sparkles, Info, Mail, Globe } from 'lucide-react'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const location = useLocation()
   const { savedTrips } = useSelector(state => state.trip)
+  const { currency, setCurrency } = useCurrency()
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10)
@@ -85,6 +87,24 @@ const Navbar = () => {
               </div>
             </SignedOut>
             <SignedIn>
+              <div className="hidden md:flex items-center gap-1 mr-3 bg-slate-100 rounded-full p-0.5">
+                <button
+                  onClick={() => setCurrency('INR')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
+                    currency === 'INR' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  ₹ INR
+                </button>
+                <button
+                  onClick={() => setCurrency('USD')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
+                    currency === 'USD' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  $ USD
+                </button>
+              </div>
               <UserButton
                 appearance={{ elements: { avatarBox: 'w-9 h-9' } }}
                 afterSignOutUrl="/"

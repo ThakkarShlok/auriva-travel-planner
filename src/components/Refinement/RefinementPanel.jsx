@@ -43,6 +43,45 @@ const MessageLog = ({ messages, refining, endRef }) => (
   </div>
 )
 
+const InputArea = ({ input, setInput, refining, refinementError, onQuickAction, onSubmit, onKeyDown }) => (
+  <div>
+    <div className="flex flex-wrap gap-1.5 mb-2">
+      {QUICK_ACTIONS.map(action => (
+        <button
+          key={action}
+          type="button"
+          onClick={() => onQuickAction(action)}
+          disabled={refining}
+          className="text-xs px-2.5 py-1 rounded-full border border-slate-200 text-slate-600 hover:border-primary-600 hover:text-primary-700 transition disabled:opacity-40"
+        >
+          {action}
+        </button>
+      ))}
+    </div>
+    <form onSubmit={onSubmit} className="flex gap-2">
+      <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder='Try: "Make day 2 less hectic"'
+        rows={2}
+        disabled={refining}
+        className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 resize-none focus:ring-2 focus:ring-primary-700 focus:border-transparent outline-none disabled:opacity-50"
+      />
+      <button
+        type="submit"
+        disabled={!input.trim() || refining}
+        className="self-end p-2.5 bg-accent-500 text-white rounded-xl hover:bg-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+      >
+        <Send className="w-4 h-4" />
+      </button>
+    </form>
+    {refinementError && (
+      <p className="text-xs text-red-600 mt-2">{refinementError}</p>
+    )}
+  </div>
+)
+
 /**
  * Props:
  *   tripId   — Neon trip UUID (required)
@@ -111,45 +150,6 @@ const RefinementPanel = ({ tripId, onRefined }) => {
     }
   }
 
-  const InputArea = () => (
-    <div>
-      <div className="flex flex-wrap gap-1.5 mb-2">
-        {QUICK_ACTIONS.map(action => (
-          <button
-            key={action}
-            type="button"
-            onClick={() => submit(action)}
-            disabled={refining}
-            className="text-xs px-2.5 py-1 rounded-full border border-slate-200 text-slate-600 hover:border-primary-600 hover:text-primary-700 transition disabled:opacity-40"
-          >
-            {action}
-          </button>
-        ))}
-      </div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder='Try: "Make day 2 less hectic"'
-          rows={2}
-          disabled={refining}
-          className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 resize-none focus:ring-2 focus:ring-primary-700 focus:border-transparent outline-none disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || refining}
-          className="self-end p-2.5 bg-accent-500 text-white rounded-xl hover:bg-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </form>
-      {refinementError && (
-        <p className="text-xs text-red-600 mt-2">{refinementError}</p>
-      )}
-    </div>
-  )
-
   return (
     <>
       {/* Desktop: card in sidebar */}
@@ -161,7 +161,15 @@ const RefinementPanel = ({ tripId, onRefined }) => {
           </div>
           <div className="flex flex-col gap-3">
             <MessageLog messages={messages} refining={refining} endRef={desktopEndRef} />
-            <InputArea />
+            <InputArea
+              input={input}
+              setInput={setInput}
+              refining={refining}
+              refinementError={refinementError}
+              onQuickAction={submit}
+              onSubmit={handleSubmit}
+              onKeyDown={handleKeyDown}
+            />
           </div>
         </Card>
       </div>
@@ -191,7 +199,15 @@ const RefinementPanel = ({ tripId, onRefined }) => {
               </div>
               <div className="flex flex-col gap-3 p-6 overflow-y-auto flex-1">
                 <MessageLog messages={messages} refining={refining} endRef={sheetEndRef} />
-                <InputArea />
+                <InputArea
+                  input={input}
+                  setInput={setInput}
+                  refining={refining}
+                  refinementError={refinementError}
+                  onQuickAction={submit}
+                  onSubmit={handleSubmit}
+                  onKeyDown={handleKeyDown}
+                />
               </div>
             </div>
           </>

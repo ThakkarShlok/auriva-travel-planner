@@ -1,8 +1,11 @@
 import { callGroq, GroqError, assertGroqKey } from './_lib/groq.js'
+import { logGeneration } from '../src/db/queries/generationLogs.js'
 
+const MODEL = 'llama-3.1-8b-instant'
 const SYSTEM_PROMPT = `You are Auriva, a helpful AI travel assistant. Give concise, accurate, practical travel advice. Recommend real places, real hotels, and real services. If you're uncertain about something, say so rather than guessing.`
 
 export default async function handler(req, res) {
+  const startTime = Date.now()
   // Outermost try ensures NOTHING leaves this function uncaught
   try {
     console.log('[api]', req.method, req.url, 'body length:', JSON.stringify(req.body || {}).length)
@@ -24,7 +27,7 @@ export default async function handler(req, res) {
     }
 
     const content = await callGroq({
-      model: 'llama-3.1-8b-instant',
+      model: MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...history,
@@ -36,6 +39,10 @@ export default async function handler(req, res) {
     })
 
     console.log('[api]', req.url, 'success')
+    logGeneration({
+      endpoint: 'chat', model: MODEL, status: 'success',
+      latencyMs: Date.now() - startTime,
+    })
     return res.status(200).json({ message: content })
 
   } catch (error) {
@@ -46,6 +53,12 @@ export default async function handler(req, res) {
       code: error?.code,
       status: error?.status,
       stack: error?.stack?.split('\n').slice(0, 5).join('\n'),
+    })
+
+    logGeneration({
+      endpoint: 'chat', model: MODEL, status: 'error',
+      errorMessage: error?.message?.slice(0, 500),
+      latencyMs: Date.now() - startTime,
     })
 
     const status = error?.status || 500

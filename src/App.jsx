@@ -19,6 +19,7 @@ const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
 const DiscoverPage = lazy(() => import('./pages/Discover/DiscoverPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const PublicTripPage = lazy(() => import('./pages/PublicTrip/PublicTripPage'))
+const AdminMetricsPage = lazy(() => import('./pages/Admin/AdminMetricsPage'))
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="share/:slug" element={<PublicTripPage />} />
+          {/* Not wrapped in PrivateRoute — AdminMetricsPage does its own sign-in + admin-email check */}
+          <Route path="admin/metrics" element={<AdminMetricsPage />} />
 
           {/* Protected routes */}
           <Route path="planner" element={

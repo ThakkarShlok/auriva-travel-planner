@@ -1,5 +1,12 @@
 import { requireUser, AuthError } from '../_lib/auth.js'
-import { getTripWithDays, updateTripDays, updateTripMetadata, deleteTrip } from '../../src/db/queries/trips.js'
+import {
+  getTripWithDays,
+  updateTripDays,
+  updateTripMetadata,
+  updateTripDay,
+  updateTripPackingChecklist,
+  deleteTrip,
+} from '../../src/db/queries/trips.js'
 
 export default async function handler(req, res) {
   try {
@@ -15,7 +22,39 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { days, metadata } = req.body ?? {}
+      const body = req.body ?? {}
+
+      // Single-day companion patch: { dayIndex, day }
+      if (body.dayIndex != null && body.day != null) {
+        const dayIndex = Number(body.dayIndex)
+        if (!Number.isInteger(dayIndex) || dayIndex < 0) {
+          return res.status(400).json({ error: 'dayIndex must be a non-negative integer' })
+        }
+        const day = body.day
+        if (!Array.isArray(day.activities)) {
+          return res.status(400).json({ error: 'day.activities must be an array' })
+        }
+        if (day.activities.some(a => !a.title)) {
+          return res.status(400).json({ error: 'Every activity must have a title' })
+        }
+        const updated = await updateTripDay(tripId, user.id, dayIndex, day)
+        if (!updated) return res.status(404).json({ error: 'Trip or day not found' })
+        const full = await getTripWithDays(tripId, user.id)
+        return res.status(200).json({ trip: full })
+      }
+
+      // Packing checklist patch: { packingChecklist }
+      if (body.packingChecklist != null) {
+        if (!Array.isArray(body.packingChecklist)) {
+          return res.status(400).json({ error: 'packingChecklist must be an array' })
+        }
+        const updated = await updateTripPackingChecklist(tripId, user.id, body.packingChecklist)
+        if (!updated) return res.status(404).json({ error: 'Trip not found' })
+        return res.status(200).json({ trip: updated })
+      }
+
+      // Full refinement patch: { days, metadata }
+      const { days, metadata } = body
       if (days) await updateTripDays(tripId, user.id, days)
       if (metadata) await updateTripMetadata(tripId, user.id, metadata)
       const updated = await getTripWithDays(tripId, user.id)

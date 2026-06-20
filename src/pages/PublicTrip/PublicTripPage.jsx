@@ -6,11 +6,14 @@ import toast from 'react-hot-toast'
 import PageHeader from '../../components/UI/PageHeader'
 import Card from '../../components/UI/Card'
 import TimelineDay from '../../components/UI/TimelineDay'
+import WeatherForecastCard from '../../components/UI/WeatherForecastCard'
 import EmptyState from '../../components/UI/EmptyState'
 import SkeletonCard from '../../components/UI/SkeletonCard'
 import GradientCTA from '../../components/UI/GradientCTA'
 import Button from '../../components/UI/Button'
 import usePageTitle from '../../hooks/usePageTitle'
+import { useCurrency } from '../../contexts/CurrencyContext'
+import { formatCurrency } from '../../utils/currency'
 
 // Updates a meta tag by property or name, creating it if absent
 function setMetaTag(attrKey, attrValue, content) {
@@ -31,6 +34,7 @@ const PublicTripPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isDownloading, setIsDownloading] = useState(false)
+  const { currency, usdToInr } = useCurrency()
 
   usePageTitle(trip?.destination ? `${trip.destination} trip` : 'Shared trip')
 
@@ -134,12 +138,20 @@ const PublicTripPage = () => {
           {/* Day timeline */}
           <div className="lg:col-span-8 space-y-4">
             {trip.days?.map((day, index) => (
-              <TimelineDay key={index} day={day} index={index} defaultOpen={index === 0} />
+              <TimelineDay
+                key={index}
+                day={day}
+                index={index}
+                defaultOpen={index === 0}
+                weather={trip.weather?.daily?.[index]}
+              />
             ))}
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <WeatherForecastCard daily={trip.weather?.daily} duration={trip.duration} destination={trip.destination} />
+
             {trip.budgetBreakdown && (
               <Card padding="md">
                 <h3 className="text-base font-semibold text-slate-800 mb-4">Budget Breakdown</h3>
@@ -150,7 +162,7 @@ const PublicTripPage = () => {
                       <div key={key}>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="capitalize text-slate-500">{key}</span>
-                          <span className="font-semibold text-slate-800">${value}</span>
+                          <span className="font-semibold text-slate-800">{formatCurrency(value, currency, usdToInr)}</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
                           <div className="bg-primary-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />

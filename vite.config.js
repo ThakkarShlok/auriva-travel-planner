@@ -83,6 +83,9 @@ function apiPlugin() {
         { route: 'public-trip',               file: 'public-trip' },
         // PDF download — exact route (email is now client-side via EmailJS)
         { route: 'download-pdf',              file: 'download-pdf' },
+        // Real-world context (Phase 8) — currency rates + admin observability
+        { route: 'rates',                     file: 'rates' },
+        { route: 'admin/metrics',             file: 'admin/metrics' },
       ]
 
       for (const { route, file } of apiRoutes) {

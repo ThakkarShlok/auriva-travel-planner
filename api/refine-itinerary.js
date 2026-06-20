@@ -2,6 +2,10 @@ import { callGroq } from './_lib/groq.js'
 import { requireUser, AuthError } from './_lib/auth.js'
 import { getTripWithDays, updateTripDays, updateTripMetadata } from '../src/db/queries/trips.js'
 import { appendMessage } from '../src/db/queries/conversations.js'
+import { buildWeatherPromptContext } from './_lib/weather.js'
+import { logGeneration } from '../src/db/queries/generationLogs.js'
+
+const MODEL = 'llama-3.3-70b-versatile'
 
 const REFINE_SYSTEM_PROMPT = `You are an expert travel planner refining an existing itinerary based on user feedback. You will be given the current itinerary as JSON and the user's modification request.
 
@@ -15,17 +19,24 @@ Return ONLY a JSON object with the FULL updated itinerary in this exact schema:
   "tips": ["string"]
 }
 
-Preserve unchanged days exactly as-is. Only modify what the user specifically asked about. All monetary values in USD. Real place names only. No markdown fences.`
+Preserve unchanged days exactly as-is. Only modify what the user specifically asked about. ALL monetary values you return MUST be in US dollars (USD) — the client converts to local currency at display time. Real place names only. No markdown fences.
+
+If a weather forecast is included below, keep activity timing and packing list aligned with it unless the user's request overrides it.`
 
 export default async function handler(req, res) {
+  const startTime = Date.now()
+  let user = null
+  let weatherUsed = false
+  let tripIdForLog = null
   try {
-    const user = await requireUser(req)
+    user = await requireUser(req)
 
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
     const { tripId, instruction } = req.body ?? {}
+    tripIdForLog = tripId ?? null
 
     if (!tripId) {
       return res.status(400).json({ error: 'tripId is required' })
@@ -50,12 +61,21 @@ export default async function handler(req, res) {
       tips: trip.tips,
     }
 
+    // Reuse the trip's stored forecast (destination hasn't changed) — no extra API call
+    const weatherContext = trip.weather
+      ? buildWeatherPromptContext({ forecast: trip.weather }, null, trip.duration)
+      : null
+    weatherUsed = !!weatherContext
+    const systemPromptWithContext = weatherContext
+      ? `${REFINE_SYSTEM_PROMPT}\n\nWeather forecast:\n${weatherContext}`
+      : REFINE_SYSTEM_PROMPT
+
     const userPrompt = `Current itinerary:\n${JSON.stringify(currentItinerary)}\n\nDestination: ${trip.destination}, ${trip.duration} days.\n\nUser request: ${instruction.trim()}\n\nReturn the full updated itinerary as JSON.`
 
     const content = await callGroq({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
-        { role: 'system', content: REFINE_SYSTEM_PROMPT },
+        { role: 'system', content: systemPromptWithContext },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.5,
@@ -68,6 +88,12 @@ export default async function handler(req, res) {
     try {
       updated = JSON.parse(content)
     } catch {
+      logGeneration({
+        userId: user.id, tripId: tripIdForLog, endpoint: 'refine-itinerary', model: MODEL,
+        status: 'error', errorMessage: 'AI returned malformed JSON',
+        latencyMs: Date.now() - startTime,
+        contextEnrichments: { weather: weatherUsed, currency: 'USD' },
+      })
       return res.status(502).json({ error: 'AI returned malformed JSON' })
     }
 
@@ -91,6 +117,12 @@ export default async function handler(req, res) {
     ])
 
     console.log('[api] /api/refine-itinerary success — trip', tripId)
+    logGeneration({
+      userId: user.id, tripId: tripIdForLog, endpoint: 'refine-itinerary', model: MODEL,
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+      contextEnrichments: { weather: weatherUsed, currency: 'USD' },
+    })
     return res.status(200).json({ itinerary: updated })
 
   } catch (error) {
@@ -98,6 +130,12 @@ export default async function handler(req, res) {
       return res.status(error.status).json({ error: error.message, code: 'AuthError' })
     }
     console.error('[api error refine]', error?.name, error?.message)
+    logGeneration({
+      userId: user?.id ?? null, tripId: tripIdForLog, endpoint: 'refine-itinerary', model: MODEL,
+      status: 'error', errorMessage: error?.message?.slice(0, 500),
+      latencyMs: Date.now() - startTime,
+      contextEnrichments: { weather: weatherUsed, currency: 'USD' },
+    })
     return res.status(error?.status || 500).json({
       error: error?.message || 'Unknown server error',
       code: error?.code || 'UnknownError',

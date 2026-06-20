@@ -17,10 +17,14 @@ import Card from '../../components/UI/Card'
 import TimelineDay from '../../components/UI/TimelineDay'
 import SkeletonCard from '../../components/UI/SkeletonCard'
 import EmptyState from '../../components/UI/EmptyState'
+import WeatherForecastCard from '../../components/UI/WeatherForecastCard'
+import { useCurrency } from '../../contexts/CurrencyContext'
+import { formatCurrency } from '../../utils/currency'
 
 // ─── Sidebar cards (streaming preview + final) ────────────────────────────────
 
-const SidebarCards = ({ trip }) => {
+const SidebarCards = ({ trip, weatherDaily, duration, destination }) => {
+  const { currency, usdToInr } = useCurrency()
   if (!trip) {
     return (
       <>
@@ -38,6 +42,8 @@ const SidebarCards = ({ trip }) => {
 
   return (
     <>
+      <WeatherForecastCard daily={weatherDaily} duration={duration} destination={destination} />
+
       {budgetData && typeof budgetData === 'object' && (
         <Card padding="md">
           <h3 className="text-sm font-semibold text-slate-800 mb-4">Budget Breakdown</h3>
@@ -48,7 +54,7 @@ const SidebarCards = ({ trip }) => {
                 <div key={key}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="capitalize text-slate-500">{key}</span>
-                    <span className="font-semibold text-slate-700">${value}</span>
+                    <span className="font-semibold text-slate-700">{formatCurrency(value, currency, usdToInr)}</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
                     <div className="bg-primary-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -107,7 +113,10 @@ const PlannerPage = () => {
     error,
     streamingProgress,
     streamingTokenCount,
+    streamingWeather,
   } = useSelector(state => state.trip)
+
+  const weatherDaily = (loading ? streamingWeather : currentTrip?.weather)?.daily
 
   // Kick off streaming generation on mount
   useEffect(() => {
@@ -138,6 +147,7 @@ const PlannerPage = () => {
         travelers: onboardingData.travelers,
         budget: onboardingData.budget,
         interests: onboardingData.interests || null,
+        startDate: onboardingData.startDate || null,
       },
       generated: currentTrip,
     }))
@@ -228,7 +238,7 @@ const PlannerPage = () => {
         <div className="grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-4">
             {partialDays.map((day, i) => (
-              <TimelineDay key={i} day={day} index={i} defaultOpen={i === 0} />
+              <TimelineDay key={i} day={day} index={i} defaultOpen={i === 0} weather={weatherDaily?.[i]} />
             ))}
             {Array.from({ length: skeletonCount }).map((_, i) => (
               <SkeletonCard key={`skel-${i}`} showHeader lines={3 + (i % 2)} />
@@ -236,7 +246,12 @@ const PlannerPage = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <SidebarCards trip={loading ? streamingProgress : currentTrip} />
+            <SidebarCards
+              trip={loading ? streamingProgress : currentTrip}
+              weatherDaily={weatherDaily}
+              duration={onboardingData.duration}
+              destination={onboardingData.destination}
+            />
           </div>
         </div>
 

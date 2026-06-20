@@ -9,11 +9,17 @@ AI-powered travel itinerary generator. Enter a destination, duration, budget, an
 
 ## What it does
 
-- Fill in a destination, duration, budget, and interests on the Onboarding page
+- Fill in a destination, start date, duration, budget, and interests on the Onboarding page
 - The app streams a day-by-day itinerary in real time using Server-Sent Events (Groq → SSE → client)
+- Generation is grounded in a live 14-day weather forecast and enforces USD pricing so currency conversion stays correct
 - Refine the result conversationally via the sidebar chat panel
 - Save trips to your account, duplicate, or delete them from the Dashboard
 - An AI chat assistant can answer follow-up travel questions
+
+### Companion Mode (Phase 9)
+Auriva works as a travel companion during your trip, not just before it. When you set a start date, the itinerary detail view auto-scrolls to today's day card, marks it with a "Today" badge, and enables per-activity checkboxes, personal notes (auto-saved with 800ms debounce), and actual-cost tracking with a delta vs estimated cost. The packing list converts to an interactive checklist with "Save as checklist." All mutations are optimistic (no loading spinners) and offline-resilient: changes made without a network connection are queued in localStorage and replayed automatically on reconnect. The app is installable as a PWA — your most recently opened trip is available offline via a service worker cache.
+- View costs in INR or USD — toggle persists per browser
+- Admins can inspect generation volume, latency, and error rate at `/admin/metrics`
 
 ## Tech stack
 
@@ -52,7 +58,8 @@ Fill in `.env.local`:
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys |
 | `CLERK_SECRET_KEY` | Clerk dashboard → API Keys |
 | `CLERK_WEBHOOK_SECRET` | Added after webhook setup — see below |
-| `RESEND_API_KEY` | https://resend.com → API Keys (optional — enables email delivery + contact form) |
+| `VITE_EMAILJS_*` | https://www.emailjs.com → Dashboard (optional — enables email delivery + contact form, see below) |
+| `ADMIN_EMAILS` / `VITE_ADMIN_EMAILS` | Your own Clerk account email — gates `/admin/metrics` (optional) |
 
 ### 3. Push the database schema
 
@@ -187,6 +194,33 @@ Auriva uses [EmailJS](https://www.emailjs.com) for transactional emails (trip de
 EmailJS is browser-side — the `VITE_EMAILJS_PUBLIC_KEY` is intentionally client-visible (that's how EmailJS works). Sensitive operations (PDF generation, trip data reads) remain server-side via `/api/download-pdf`.
 
 <!-- TODO Phase 10: rate-limit contact form on client side (e.g. disable button for 60s after submit) to discourage spam -->
+
+## Real-world AI context
+
+Auriva is not "an LLM with a frontend" — it augments the LLM with real-world data the LLM cannot access alone:
+
+- **Weather**: Live 14-day forecasts from [Open-Meteo](https://open-meteo.com) (free, no key) are fetched server-side and cached for 6 hours in Postgres. The forecast is injected into the system prompt before generation, so the AI plans indoor alternatives on rainy days and adjusts activity timing for hot/cold weather. Weather chips appear on each day card. Forecasts are persisted on the trip at save time, so shared links and old trips keep their original forecast.
+
+- **Currency**: All AI responses are normalized to USD (enforced by the system prompt). The client converts to INR or USD at display time using rates fetched from [open.er-api.com](https://www.exchangerate-api.com/docs/free) and cached in Postgres for 24 hours. User preference is persisted in localStorage. Default: INR. PDFs always show USD (no React context available at server-render time).
+
+- **Observability**: Every Groq API call is logged to a `generation_logs` table with endpoint, model, latency, status, and context enrichments. An admin route at `/admin/metrics` (email-gated via `ADMIN_EMAILS`) shows a 7-day summary, 14-day daily volume, endpoint breakdown, and recent generation log.
+
+The architectural principle: the LLM is responsible for creative reasoning (what to do, in what order). Deterministic data (weather, currency, time) lives in code. This separation prevents LLM hallucinations in domains where ground truth exists.
+
+### Admin metrics
+
+Add your Clerk email to `.env.local`:
+
+```
+ADMIN_EMAILS=your@email.com
+VITE_ADMIN_EMAILS=your@email.com
+```
+
+Then visit `/admin/metrics` while signed in with that email. The page is gated both client-side (rendering check, UX only) and server-side (API authorization, the actual security boundary).
+
+<!-- TODO Phase 9 (companion mode): conversational multi-turn trip building instead of one-shot generation -->
+<!-- TODO Phase 10 (profile intelligence): remember user's past trips/preferences to personalize future generations -->
+<!-- TODO Phase 11 (deploy): confirm all env vars on Vercel, create public/og-default.png, custom Resend/EmailJS domain -->
 
 ## Contact
 

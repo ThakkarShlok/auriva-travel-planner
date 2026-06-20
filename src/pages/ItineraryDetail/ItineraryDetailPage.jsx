@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import toast from 'react-hot-toast'
-import { ArrowLeft, ChevronRight, Share2, Download } from 'lucide-react'
-import { getTrip, downloadTripPDF } from '../../services/tripsService'
+import { ArrowLeft, ChevronRight, Share2, Download, CheckSquare, List } from 'lucide-react'
+import { getTrip, downloadTripPDF, patchTripDay, patchPackingChecklist } from '../../services/tripsService'
 import Button from '../../components/UI/Button'
 import Badge from '../../components/UI/Badge'
 import PageHeader from '../../components/UI/PageHeader'
 import Card from '../../components/UI/Card'
 import TimelineDay from '../../components/UI/TimelineDay'
+import WeatherForecastCard from '../../components/UI/WeatherForecastCard'
 import EmptyState from '../../components/UI/EmptyState'
 import SkeletonCard from '../../components/UI/SkeletonCard'
 import RefinementPanel from '../../components/Refinement/RefinementPanel'
 import ShareModal from '../../components/Sharing/ShareModal'
 import usePageTitle from '../../hooks/usePageTitle'
+import { useCurrency } from '../../contexts/CurrencyContext'
+import { formatCurrency } from '../../utils/currency'
+import { dayIndexForToday, formatTripDate } from '../../utils/dates'
 
 const ItineraryDetailPage = () => {
   const { id } = useParams()
@@ -24,6 +28,10 @@ const ItineraryDetailPage = () => {
   const [error, setError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const { currency, usdToInr } = useCurrency()
+
+  const dayRefs = useRef([])
+  const todayScrolled = useRef(false)
 
   usePageTitle(trip?.destination ? `${trip.destination} Itinerary` : 'Itinerary')
 
@@ -35,6 +43,18 @@ const ItineraryDetailPage = () => {
       .catch((err) => setError(err.message || 'Failed to load itinerary'))
       .finally(() => setLoading(false))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-scroll to today's day card once after trip loads
+  useEffect(() => {
+    if (!trip || todayScrolled.current) return
+    const todayIndex = dayIndexForToday(trip.startDate)
+    if (todayIndex >= 0 && todayIndex < (trip.days?.length ?? 0)) {
+      todayScrolled.current = true
+      setTimeout(() => {
+        dayRefs.current[todayIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 150) // small delay so layout is stable
+    }
+  }, [trip])
 
   const handleRefined = (updated) => {
     setTrip(prev => ({
@@ -50,6 +70,52 @@ const ItineraryDetailPage = () => {
         dayNumber: idx + 1,
       })),
     }))
+  }
+
+  // Companion: optimistic update + background PATCH
+  const handleActivityUpdate = useCallback(async (dayIndex, updatedDay) => {
+    const prevTrip = trip
+    setTrip(prev => ({
+      ...prev,
+      days: prev.days.map((d, i) =>
+        i === dayIndex ? { ...d, title: updatedDay.title, activities: updatedDay.activities } : d
+      ),
+    }))
+    try {
+      await patchTripDay(trip.id, dayIndex, updatedDay, getToken)
+    } catch (err) {
+      setTrip(prevTrip)
+      toast.error("Couldn't save change. Try again?")
+    }
+  }, [trip, getToken]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Packing checklist: save as interactive checklist
+  const handleSaveChecklist = async () => {
+    if (!trip?.packing?.length) return
+    const checklist = trip.packing.map(item => ({ item, checked: false }))
+    const prevTrip = trip
+    setTrip(prev => ({ ...prev, packingChecklist: checklist }))
+    try {
+      await patchPackingChecklist(trip.id, checklist, getToken)
+    } catch {
+      setTrip(prevTrip)
+      toast.error("Couldn't save checklist. Try again?")
+    }
+  }
+
+  const handleChecklistToggle = async (itemIndex) => {
+    if (!trip?.packingChecklist) return
+    const prevTrip = trip
+    const updated = trip.packingChecklist.map((item, i) =>
+      i === itemIndex ? { ...item, checked: !item.checked } : item
+    )
+    setTrip(prev => ({ ...prev, packingChecklist: updated }))
+    try {
+      await patchPackingChecklist(trip.id, updated, getToken)
+    } catch {
+      setTrip(prevTrip)
+      toast.error("Couldn't save checklist. Try again?")
+    }
   }
 
   const handleDownloadPDF = async () => {
@@ -102,6 +168,8 @@ const ItineraryDetailPage = () => {
     ? Object.values(trip.budgetBreakdown).reduce((a, b) => a + b, 0)
     : 0
 
+  const todayDayIndex = dayIndexForToday(trip.startDate)
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="pt-16 md:pt-20">
@@ -146,13 +214,30 @@ const ItineraryDetailPage = () => {
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Day timeline */}
           <div className="lg:col-span-8 space-y-4">
-            {trip.days?.map((day, index) => (
-              <TimelineDay key={day.id || index} day={day} index={index} defaultOpen={index === 0} />
-            ))}
+            {trip.days?.map((day, index) => {
+              const isToday = todayDayIndex === index
+              return (
+                <div key={day.id || index} ref={el => dayRefs.current[index] = el}>
+                  <TimelineDay
+                    day={day}
+                    index={index}
+                    defaultOpen={todayDayIndex >= 0 ? isToday : index === 0}
+                    weather={trip.weather?.daily?.[index]}
+                    companion={trip.startDate ? {
+                      isToday,
+                      tripDate: formatTripDate(trip.startDate, index),
+                      onActivityUpdate: handleActivityUpdate,
+                    } : undefined}
+                  />
+                </div>
+              )
+            })}
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <WeatherForecastCard daily={trip.weather?.daily} duration={trip.duration} destination={trip.destination} />
+
             {trip.budgetBreakdown && (
               <Card padding="md">
                 <h3 className="text-base font-semibold text-slate-800 mb-4">Budget Breakdown</h3>
@@ -163,7 +248,7 @@ const ItineraryDetailPage = () => {
                       <div key={key}>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="capitalize text-slate-500">{key}</span>
-                          <span className="font-semibold text-slate-800">${value}</span>
+                          <span className="font-semibold text-slate-800">{formatCurrency(value, currency, usdToInr)}</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
                           <div className="bg-primary-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
@@ -189,17 +274,61 @@ const ItineraryDetailPage = () => {
               </Card>
             )}
 
-            {trip.packing?.length > 0 && (
+            {/* Packing — interactive checklist if saved, static list with Save button if not */}
+            {(trip.packing?.length > 0 || trip.packingChecklist?.length > 0) && (
               <Card padding="md">
-                <h3 className="text-base font-semibold text-slate-800 mb-3">Packing List</h3>
-                <ul className="space-y-2">
-                  {trip.packing.map((item, idx) => (
-                    <li key={idx} className="text-slate-600 text-sm flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 bg-accent-500 rounded-full flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-semibold text-slate-800">Packing List</h3>
+                  {!trip.packingChecklist && trip.packing?.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleSaveChecklist}
+                      className="flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-medium transition"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      Save as checklist
+                    </button>
+                  )}
+                  {trip.packingChecklist && (
+                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                      <List className="w-3.5 h-3.5" />
+                      {trip.packingChecklist.filter(i => i.checked).length}/{trip.packingChecklist.length} packed
+                    </span>
+                  )}
+                </div>
+
+                {trip.packingChecklist ? (
+                  <ul className="space-y-2">
+                    {trip.packingChecklist.map((entry, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleChecklistToggle(idx)}
+                          className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all
+                            ${entry.checked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 hover:border-emerald-400'}`}
+                        >
+                          {entry.checked && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
+                              <path d="M1.5 5l2.5 2.5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                        <span className={`text-sm ${entry.checked ? 'line-through text-slate-400' : 'text-slate-600'}`}>
+                          {entry.item}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="space-y-2">
+                    {trip.packing.map((item, idx) => (
+                      <li key={idx} className="text-slate-600 text-sm flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-accent-500 rounded-full flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </Card>
             )}
 
