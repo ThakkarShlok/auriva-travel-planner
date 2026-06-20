@@ -6,6 +6,8 @@ import {
   saveTrip as apiSaveTrip,
   deleteTrip as apiDeleteTrip,
   duplicateTrip as apiDuplicateTrip,
+  patchTripDay as apiPatchTripDay,
+  patchPackingChecklist as apiPatchPackingChecklist,
 } from '../../services/tripsService'
 
 const loadOnboardingData = () =>
@@ -17,6 +19,33 @@ const loadOnboardingData = () =>
     interests: '',
   }
 
+// ─── Companion thunks ────────────────────────────────────────────────────────
+
+// These thunks are dispatched by ItineraryDetailPage after its own optimistic local-state
+// update. They handle background persistence + offline queuing.
+
+export const persistActivityUpdate = createAsyncThunk(
+  'trip/persistActivityUpdate',
+  async ({ tripId, dayIndex, day }, { rejectWithValue, extra }) => {
+    try {
+      return await apiPatchTripDay(tripId, dayIndex, day, extra.getToken)
+    } catch (error) {
+      return rejectWithValue(error.message)
+    }
+  }
+)
+
+export const persistPackingChecklist = createAsyncThunk(
+  'trip/persistPackingChecklist',
+  async ({ tripId, checklist }, { rejectWithValue, extra }) => {
+    try {
+      return await apiPatchPackingChecklist(tripId, checklist, extra.getToken)
+    } catch (error) {
+      return rejectWithValue(error.message)
+    }
+  }
+)
+
 // ─── Thunks ──────────────────────────────────────────────────────────────────
 
 export const generateItineraryStreaming = createAsyncThunk(
@@ -27,6 +56,7 @@ export const generateItineraryStreaming = createAsyncThunk(
 
       streamItinerary(preferences, {
         signal,
+        onWeather: (weather) => dispatch(tripSlice.actions.streamWeather(weather)),
         onPartialJson: (partial) => dispatch(tripSlice.actions.streamProgress(partial)),
         onToken: (_, accumulated) => dispatch(tripSlice.actions.streamTokenCount(accumulated.length)),
         onDone: (final) => {
@@ -100,6 +130,7 @@ const initialState = {
   currentRequestId: null,
   streamingProgress: null,
   streamingTokenCount: 0,
+  streamingWeather: null,
   // Saved trips (from Neon via API)
   savedTrips: [],
   tripsLoading: false,
@@ -120,6 +151,7 @@ const tripSlice = createSlice({
       state.currentTrip = null
       state.streamingProgress = null
       state.streamingTokenCount = 0
+      state.streamingWeather = null
     },
     clearError: (state) => {
       state.error = null
@@ -133,6 +165,7 @@ const tripSlice = createSlice({
       state.error = null
       state.streamingProgress = null
       state.streamingTokenCount = 0
+      state.streamingWeather = null
       state.currentTrip = null
     },
     streamProgress: (state, action) => {
@@ -141,15 +174,51 @@ const tripSlice = createSlice({
     streamTokenCount: (state, action) => {
       state.streamingTokenCount = action.payload
     },
+    streamWeather: (state, action) => {
+      state.streamingWeather = action.payload
+    },
     streamCompleted: (state, action) => {
       state.loading = false
-      state.currentTrip = action.payload
+      state.currentTrip = { ...action.payload, weather: state.streamingWeather }
       state.streamingProgress = null
     },
     streamAborted: (state) => {
       state.loading = false
       state.streamingProgress = null
       state.streamingTokenCount = 0
+      state.streamingWeather = null
+    },
+    // ── Companion mode — operate on savedTrips list for optimistic dashboard updates ──
+    toggleActivityChecked: (state, action) => {
+      const { tripId, dayIndex, activityIndex } = action.payload
+      const trip = state.savedTrips.find(t => t.id === tripId)
+      if (!trip?.days?.[dayIndex]?.activities?.[activityIndex]) return
+      const activity = trip.days[dayIndex].activities[activityIndex]
+      activity.checked = !activity.checked
+    },
+    setActivityNotes: (state, action) => {
+      const { tripId, dayIndex, activityIndex, notes } = action.payload
+      const trip = state.savedTrips.find(t => t.id === tripId)
+      if (!trip?.days?.[dayIndex]?.activities?.[activityIndex]) return
+      trip.days[dayIndex].activities[activityIndex].notes = notes
+    },
+    setActivityActualCost: (state, action) => {
+      const { tripId, dayIndex, activityIndex, actualCost } = action.payload
+      const trip = state.savedTrips.find(t => t.id === tripId)
+      if (!trip?.days?.[dayIndex]?.activities?.[activityIndex]) return
+      trip.days[dayIndex].activities[activityIndex].actualCost = actualCost
+    },
+    savePackingChecklist: (state, action) => {
+      const { tripId, checklist } = action.payload
+      const trip = state.savedTrips.find(t => t.id === tripId)
+      if (!trip) return
+      trip.packingChecklist = checklist
+    },
+    toggleChecklistItem: (state, action) => {
+      const { tripId, itemIndex } = action.payload
+      const trip = state.savedTrips.find(t => t.id === tripId)
+      if (!trip?.packingChecklist?.[itemIndex]) return
+      trip.packingChecklist[itemIndex].checked = !trip.packingChecklist[itemIndex].checked
     },
   },
   extraReducers: (builder) => {
@@ -198,8 +267,14 @@ export const {
   streamStarted,
   streamProgress,
   streamTokenCount,
+  streamWeather,
   streamCompleted,
   streamAborted,
+  toggleActivityChecked,
+  setActivityNotes,
+  setActivityActualCost,
+  savePackingChecklist,
+  toggleChecklistItem,
 } = tripSlice.actions
 
 export default tripSlice.reducer

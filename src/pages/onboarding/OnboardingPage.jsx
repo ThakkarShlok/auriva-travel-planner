@@ -51,6 +51,10 @@ const OnboardingPage = () => {
       toast.error('Please enter a destination')
       return
     }
+    if (!startDate) {
+      toast.error('Please select a start date for your trip')
+      return
+    }
     const interestsList = [
       ...selectedInterests,
       ...customInterests.split(',').map(s => s.trim()).filter(Boolean),
@@ -97,6 +101,9 @@ const OnboardingPage = () => {
                   required
                 />
               </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Tip: a specific city gets the most accurate weather forecast (e.g. "Gangtok" works better than "Sikkim").
+              </p>
             </div>
 
             {/* Dates */}
@@ -109,6 +116,8 @@ const OnboardingPage = () => {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    required
                     className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-700 focus:border-transparent outline-none"
                   />
                 </div>
