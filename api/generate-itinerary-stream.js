@@ -7,14 +7,14 @@ const MODEL = 'llama-3.3-70b-versatile'
 const SYSTEM_PROMPT = `You are an expert travel planner. Respond with a JSON object only, no markdown fences. Use this exact schema:
 {
   "overview": "string — 2-3 sentence trip summary",
-  "days": [{ "title": "string", "activities": [{ "time": "HH:MM", "title": "string", "description": "string", "cost": number }] }],
+  "days": [{ "title": "string", "activities": [{ "time": "HH:MM", "title": "string", "description": "string", "cost": number, "lat": number | null, "lng": number | null }] }],
   "budget": { "accommodation": number, "food": number, "activities": number, "transport": number },
   "hotels": ["string"],
   "packing": ["string"],
   "tips": ["string"]
 }
 ALL monetary values you return MUST be in US dollars (USD). The client converts to local currency at display time. Do not adjust prices for the destination's local currency.
-Use real hotel names, real restaurant names, real landmarks — never invent placeholder names.
+For each activity, include "lat" and "lng" with approximate WGS-84 coordinates of the specific venue or attraction if known. Set to null for hotel stays, meals at unspecified restaurants, or any activity with no clear fixed location. Use real hotel names, real restaurant names, real landmarks — never invent placeholder names.
 
 If the user message includes a weather forecast, USE IT to:
 - Suggest indoor activities or alternatives on rainy days (>60% precipitation)
@@ -72,7 +72,12 @@ Include ${days} days of activities with specific real place names.`
     }
 
     sendEvent('status', { message: 'starting' })
-    sendEvent('weather', weatherData?.forecast ?? null)
+    // Include lat/lng alongside the forecast so the detail page can refresh live weather later.
+    // Consumers that only need trip.weather.daily are unaffected — daily is still at top level.
+    sendEvent('weather', weatherData
+      ? { ...weatherData.forecast, latitude: weatherData.latitude, longitude: weatherData.longitude }
+      : null
+    )
 
     const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
