@@ -21,6 +21,15 @@ Auriva works as a travel companion during your trip, not just before it. When yo
 - View costs in INR or USD — toggle persists per browser
 - Admins can inspect generation volume, latency, and error rate at `/admin/metrics`
 
+### Live Trip Mode (Phase 11a)
+Three subsystems enhance the "today" experience once a trip is active:
+
+**Live weather refresh** — today's day card silently re-fetches a fresh 3-day forecast on mount and overlays it on the day header without overwriting the historical 14-day JSONB record. A compact "Updated Nm ago" chip appears in the card header; a spinning indicator shows during the fetch. Failures are silent and non-blocking.
+
+**Timestamp-anchored exchange rates** — when you enter an actual cost, Auriva captures the exact USD→INR rate at that moment (`actualCostUsdRate`) alongside the timestamp (`actualCostCapturedAt`) and stores both on the activity JSONB. Revisiting the trip months later shows the same delta even if the FX rate has moved — recorded history is immutable.
+
+**"Where am I" geolocation hint** — an opt-in "Find nearest activity" button appears on today's card when the itinerary contains activities with coordinates (added by Groq at generation time). Tapping it triggers a one-shot `getCurrentPosition` call; if an activity is within 5 km, an amber "You're near [Activity] · distance" pill appears. Geolocation is never auto-requested and never persisted; dismissing it writes a session flag so the prompt stays gone for the browser session.
+
 ## Tech stack
 
 | | |
