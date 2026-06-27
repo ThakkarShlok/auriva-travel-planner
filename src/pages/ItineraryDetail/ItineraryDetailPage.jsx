@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import toast from 'react-hot-toast'
 import { ArrowLeft, ChevronRight, Share2, Download, CheckSquare, List } from 'lucide-react'
-import { getTrip, downloadTripPDF, patchTripDay, patchPackingChecklist } from '../../services/tripsService'
+import { getTrip, downloadTripPDF, patchTripDay, patchPackingChecklist, patchTripActualCost } from '../../services/tripsService'
 import Button from '../../components/UI/Button'
 import Badge from '../../components/UI/Badge'
 import PageHeader from '../../components/UI/PageHeader'
@@ -14,7 +14,10 @@ import EmptyState from '../../components/UI/EmptyState'
 import SkeletonCard from '../../components/UI/SkeletonCard'
 import RefinementPanel from '../../components/Refinement/RefinementPanel'
 import ShareModal from '../../components/Sharing/ShareModal'
+import WeatherRefreshIndicator from '../../components/Companion/WeatherRefreshIndicator'
 import usePageTitle from '../../hooks/usePageTitle'
+import useLiveWeatherRefresh from '../../hooks/useLiveWeatherRefresh'
+import useGeolocation from '../../hooks/useGeolocation'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { formatCurrency } from '../../utils/currency'
 import { dayIndexForToday, formatTripDate } from '../../utils/dates'
@@ -32,6 +35,15 @@ const ItineraryDetailPage = () => {
 
   const dayRefs = useRef([])
   const todayScrolled = useRef(false)
+
+  const todayDayIndexEarly = trip ? dayIndexForToday(trip.startDate) : -1
+  const isTodayTrip = todayDayIndexEarly >= 0
+
+  // Phase 11a: live weather refresh (silent failure, opportunistic)
+  const { refreshing, lastRefreshed, freshForecast } = useLiveWeatherRefresh(trip, isTodayTrip)
+
+  // Phase 11a: one-shot geolocation (never auto-fires)
+  const { status: geoStatus, position: geoPosition, request: requestGeo, dismiss: dismissGeo } = useGeolocation()
 
   usePageTitle(trip?.destination ? `${trip.destination} Itinerary` : 'Itinerary')
 
@@ -64,11 +76,32 @@ const ItineraryDetailPage = () => {
       hotels: updated.hotels ?? prev.hotels,
       packing: updated.packing ?? prev.packing,
       tips: updated.tips ?? prev.tips,
-      days: (updated.days ?? []).map((day, idx) => ({
-        ...day,
-        id: prev.days?.[idx]?.id,
-        dayNumber: idx + 1,
-      })),
+      days: (updated.days ?? []).map((day, dayIdx) => {
+        const prevDay = prev.days?.[dayIdx]
+        return {
+          ...day,
+          id: prevDay?.id,
+          dayNumber: dayIdx + 1,
+          // Merge per-activity: Groq never returns companion fields or coords,
+          // so fall back to the previous activity at the same index.
+          activities: (day.activities ?? []).map((act, actIdx) => {
+            const prevAct = prevDay?.activities?.[actIdx]
+            return {
+              ...act,
+              // Coordinates: prefer what Groq returned (may have updated a new activity),
+              // fall back to what was already stored for unchanged activities.
+              lat: act.lat ?? prevAct?.lat ?? null,
+              lng: act.lng ?? prevAct?.lng ?? null,
+              // Companion fields: always preserve — Groq never touches these.
+              ...(prevAct?.checked !== undefined && { checked: prevAct.checked }),
+              ...(prevAct?.notes !== undefined && { notes: prevAct.notes }),
+              ...(prevAct?.actualCost !== undefined && { actualCost: prevAct.actualCost }),
+              ...(prevAct?.actualCostUsdRate !== undefined && { actualCostUsdRate: prevAct.actualCostUsdRate }),
+              ...(prevAct?.actualCostCapturedAt !== undefined && { actualCostCapturedAt: prevAct.actualCostCapturedAt }),
+            }
+          }),
+        }
+      }),
     }))
   }
 
@@ -170,6 +203,12 @@ const ItineraryDetailPage = () => {
 
   const todayDayIndex = dayIndexForToday(trip.startDate)
 
+  // Phase 11a: merge fresh 3-day forecast over the original per-day weather for today's card
+  const effectiveDailyWeather = (index) => {
+    if (freshForecast && index <= 2) return freshForecast[index] ?? trip.weather?.daily?.[index]
+    return trip.weather?.daily?.[index]
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="pt-16 md:pt-20">
@@ -222,11 +261,28 @@ const ItineraryDetailPage = () => {
                     day={day}
                     index={index}
                     defaultOpen={todayDayIndex >= 0 ? isToday : index === 0}
-                    weather={trip.weather?.daily?.[index]}
+                    weather={effectiveDailyWeather(index)}
                     companion={trip.startDate ? {
                       isToday,
                       tripDate: formatTripDate(trip.startDate, index),
                       onActivityUpdate: handleActivityUpdate,
+                      // Boolean gate — element objects are always truthy even when component returns null
+                      weatherRefreshActive: isToday && (refreshing || !!lastRefreshed),
+                      weatherRefreshEl: isToday ? (
+                        <WeatherRefreshIndicator
+                          refreshing={refreshing}
+                          lastRefreshed={lastRefreshed}
+                          generatedAt={trip.createdAt}
+                        />
+                      ) : null,
+                      // geo drives NearbyBadge + jump-to-activity inside TimelineDay
+                      geo: isToday ? {
+                        status: geoStatus,
+                        position: geoPosition,
+                        onRequest: requestGeo,
+                        onDismiss: dismissGeo,
+                        destination: trip.destination,
+                      } : null,
                     } : undefined}
                   />
                 </div>

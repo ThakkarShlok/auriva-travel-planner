@@ -173,6 +173,12 @@ export async function patchPackingChecklist(tripId, checklist, getToken) {
   return data.trip
 }
 
+// Phase 11a: semantic wrapper ensuring actualCost, actualCostUsdRate, actualCostCapturedAt
+// always move as a unit. The day object must include the updated activity with all three fields.
+export async function patchTripActualCost(tripId, dayIndex, day, getToken) {
+  return patchTripDay(tripId, dayIndex, day, getToken)
+}
+
 // No auth — public endpoint
 export async function fetchPublicTrip(slug) {
   const response = await fetch(`/api/public-trip?slug=${encodeURIComponent(slug)}`)
