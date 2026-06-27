@@ -12,14 +12,14 @@ const REFINE_SYSTEM_PROMPT = `You are an expert travel planner refining an exist
 Return ONLY a JSON object with the FULL updated itinerary in this exact schema:
 {
   "overview": "string",
-  "days": [{ "title": "string", "activities": [{ "time": "HH:MM", "title": "string", "description": "string", "cost": number }] }],
+  "days": [{ "title": "string", "activities": [{ "time": "HH:MM", "title": "string", "description": "string", "cost": number, "lat": number | null, "lng": number | null }] }],
   "budget": { "accommodation": number, "food": number, "activities": number, "transport": number },
   "hotels": ["string"],
   "packing": ["string"],
   "tips": ["string"]
 }
 
-Preserve unchanged days exactly as-is. Only modify what the user specifically asked about. ALL monetary values you return MUST be in US dollars (USD) — the client converts to local currency at display time. Real place names only. No markdown fences.
+Preserve unchanged days exactly as-is — including the "lat" and "lng" values from the current itinerary. For any NEW activities you add, include approximate WGS-84 coordinates if the venue is a known fixed location; otherwise set to null. ALL monetary values MUST be in US dollars (USD). Real place names only. No markdown fences.
 
 If a weather forecast is included below, keep activity timing and packing list aligned with it unless the user's request overrides it.`
 
@@ -97,9 +97,34 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: 'AI returned malformed JSON' })
     }
 
+    // Merge coordinates + companion fields from the existing DB activities into what Groq returned.
+    // Groq only returns the schema fields (time/title/description/cost/lat/lng).
+    // lat/lng may be null if Groq omitted them for unchanged activities — fall back to DB values.
+    // checked/notes/actualCost are never returned by Groq — always restored from DB.
+    const mergedDays = (updated.days ?? []).map((day, dayIdx) => {
+      const prevDay = trip.days?.[dayIdx]
+      return {
+        ...day,
+        activities: (day.activities ?? []).map((act, actIdx) => {
+          const prevAct = prevDay?.activities?.[actIdx]
+          const merged = {
+            ...act,
+            lat: act.lat ?? prevAct?.lat ?? null,
+            lng: act.lng ?? prevAct?.lng ?? null,
+          }
+          if (prevAct?.checked !== undefined) merged.checked = prevAct.checked
+          if (prevAct?.notes !== undefined) merged.notes = prevAct.notes
+          if (prevAct?.actualCost !== undefined) merged.actualCost = prevAct.actualCost
+          if (prevAct?.actualCostUsdRate !== undefined) merged.actualCostUsdRate = prevAct.actualCostUsdRate
+          if (prevAct?.actualCostCapturedAt !== undefined) merged.actualCostCapturedAt = prevAct.actualCostCapturedAt
+          return merged
+        }),
+      }
+    })
+
     // Persist updated itinerary and conversation turn in parallel
     await Promise.all([
-      updateTripDays(tripId, user.id, updated.days),
+      updateTripDays(tripId, user.id, mergedDays),
       updateTripMetadata(tripId, user.id, {
         overview: updated.overview,
         budgetBreakdown: updated.budget,
@@ -123,7 +148,8 @@ export default async function handler(req, res) {
       latencyMs: Date.now() - startTime,
       contextEnrichments: { weather: weatherUsed, currency: 'USD' },
     })
-    return res.status(200).json({ itinerary: updated })
+    // Return mergedDays so the frontend state matches what was saved to DB
+    return res.status(200).json({ itinerary: { ...updated, days: mergedDays } })
 
   } catch (error) {
     if (error instanceof AuthError) {
