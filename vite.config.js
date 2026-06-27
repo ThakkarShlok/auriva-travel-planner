@@ -86,6 +86,8 @@ function apiPlugin() {
         // Real-world context (Phase 8) — currency rates + admin observability
         { route: 'rates',                     file: 'rates' },
         { route: 'admin/metrics',             file: 'admin/metrics' },
+        // Phase 11a — live weather refresh (preserves historical trips.weather JSONB)
+        { route: 'weather/refresh',           file: 'weather/refresh' },
       ]
 
       for (const { route, file } of apiRoutes) {

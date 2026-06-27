@@ -56,6 +56,24 @@ async function geocodeNominatim(query) {
 }
 
 /**
+ * Resolve a destination string to { latitude, longitude } using the same
+ * two-stage geocoding pipeline (Open-Meteo → Nominatim fallback).
+ * Does NOT fetch a forecast and does NOT write to the DB cache.
+ * Returns null on any failure — safe to call from any API handler.
+ */
+export async function geocodeDestination(destination) {
+  if (!destination || typeof destination !== 'string') return null
+  try {
+    const trimmed = destination.trim()
+    const geo = await geocodeOpenMeteo(trimmed) ?? await geocodeNominatim(trimmed)
+    if (!geo) return null
+    return { latitude: geo.latitude, longitude: geo.longitude }
+  } catch {
+    return null
+  }
+}
+
+/**
  * Returns normalized weather for a destination.
  * Hits the 6-hour cache first; falls back to Open-Meteo geocoding, then
  * Nominatim geocoding, then the forecast API.
