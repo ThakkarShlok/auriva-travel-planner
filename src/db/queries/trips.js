@@ -124,6 +124,13 @@ export async function updateTripPackingChecklist(tripId, userId, checklist) {
   return updated ?? null
 }
 
+// Phase 11a: stamp the live-refresh time without touching the historical trips.weather JSONB.
+export async function updateTripWeatherRefreshedAt(tripId, userId, refreshedAt = new Date()) {
+  await db.update(trips)
+    .set({ weatherRefreshedAt: refreshedAt })
+    .where(and(eq(trips.id, tripId), eq(trips.userId, userId)))
+}
+
 export async function updateTripMetadata(tripId, userId, { overview, budgetBreakdown, hotels, packing, tips }) {
   await db.update(trips)
     .set({ overview, budgetBreakdown, hotels, packing, tips, updatedAt: new Date() })

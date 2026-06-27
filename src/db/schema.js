@@ -7,9 +7,13 @@ import { pgTable, text, timestamp, jsonb, integer, real, uuid, index, date } fro
  * @property {string} description
  * @property {number} cost        - Estimated cost in USD (from Groq, never changed)
  * @property {string} [category]
- * @property {boolean} [checked]     - Phase 9: did the user do this activity?
- * @property {string}  [notes]       - Phase 9: user's personal notes
- * @property {number}  [actualCost]  - Phase 9: what the user actually spent (USD)
+ * @property {number} [lat]              - Phase 11a: approximate latitude (from Groq)
+ * @property {number} [lng]              - Phase 11a: approximate longitude (from Groq)
+ * @property {boolean} [checked]         - Phase 9: did the user do this activity?
+ * @property {string}  [notes]           - Phase 9: user's personal notes
+ * @property {number}  [actualCost]      - Phase 9: what the user actually spent (USD)
+ * @property {number}  [actualCostUsdRate]    - Phase 11a: USD→INR rate captured at entry time
+ * @property {string}  [actualCostCapturedAt] - Phase 11a: ISO timestamp of capture
  */
 
 // Users — synced from Clerk. The clerk_id is the source of truth for identity.
@@ -43,6 +47,7 @@ export const trips = pgTable('trips', {
   weather: jsonb('weather'),                  // { timezone, placeName, country, daily: [...] } at generation time
   startDate: date('start_date'),              // Phase 9: YYYY-MM-DD, user-provided trip start date
   packingChecklist: jsonb('packing_checklist'), // Phase 9: [{item: string, checked: boolean}] after user saves
+  weatherRefreshedAt: timestamp('weather_refreshed_at', { withTimezone: true }), // Phase 11a: last live refresh time
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
