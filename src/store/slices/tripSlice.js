@@ -203,10 +203,14 @@ const tripSlice = createSlice({
       trip.days[dayIndex].activities[activityIndex].notes = notes
     },
     setActivityActualCost: (state, action) => {
-      const { tripId, dayIndex, activityIndex, actualCost } = action.payload
+      // Phase 11a: capturedRate and capturedAt are optional; backward-compatible with old shape.
+      const { tripId, dayIndex, activityIndex, actualCost, capturedRate, capturedAt } = action.payload
       const trip = state.savedTrips.find(t => t.id === tripId)
       if (!trip?.days?.[dayIndex]?.activities?.[activityIndex]) return
-      trip.days[dayIndex].activities[activityIndex].actualCost = actualCost
+      const activity = trip.days[dayIndex].activities[activityIndex]
+      activity.actualCost = actualCost
+      if (capturedRate != null) activity.actualCostUsdRate = capturedRate
+      if (capturedAt != null) activity.actualCostCapturedAt = capturedAt
     },
     savePackingChecklist: (state, action) => {
       const { tripId, checklist } = action.payload

@@ -17,6 +17,7 @@ export function CurrencyProvider({ children }) {
     return localStorage.getItem(STORAGE_KEY) || DEFAULT_CURRENCY
   })
   const [usdToInr, setUsdToInr] = useState(FALLBACK_RATE)
+  const [rateFetchedAt, setRateFetchedAt] = useState(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function CurrencyProvider({ children }) {
       .then(data => {
         if (cancelled || !data?.rates?.INR) return
         setUsdToInr(data.rates.INR)
+        setRateFetchedAt(new Date().toISOString())
       })
       .catch(() => { /* keep fallback rate */ })
       .finally(() => { if (!cancelled) setIsLoaded(true) })
@@ -37,8 +39,12 @@ export function CurrencyProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, next)
   }
 
+  // Returns the currently cached rate + the ISO timestamp it was fetched at.
+  // Used by ActualCostInput to capture the historical rate at the moment of entry.
+  const getRateAt = () => ({ rate: usdToInr, fetchedAt: rateFetchedAt })
+
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, usdToInr, isLoaded }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, usdToInr, isLoaded, getRateAt }}>
       {children}
     </CurrencyContext.Provider>
   )

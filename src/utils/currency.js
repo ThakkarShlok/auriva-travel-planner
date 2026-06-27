@@ -31,21 +31,30 @@ export function useFormattedCurrency() {
 }
 
 /**
- * Format a number that is ALREADY in the display currency — no USD conversion.
- * Used when the value has already been multiplied by the exchange rate.
+ * Format a monetary value in the display currency.
+ *
+ * Two modes:
+ *   - capturedRate provided: `amount` is in USD; convert using capturedRate (historical accuracy).
+ *   - capturedRate omitted:  `amount` is already in display currency; format as-is.
+ *
+ * Use this (not formatCurrency) when the value was already converted, OR when you want
+ * to use a specific historical rate instead of the live cached rate.
  */
-export function formatDisplayAmount(amount, currency) {
+export function formatDisplayAmount(amount, currency, capturedRate = null) {
   if (amount == null || isNaN(amount)) return ''
+  const display = (capturedRate != null && currency === 'INR')
+    ? Math.round(amount * capturedRate)
+    : amount
   if (currency === 'INR') {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
-    }).format(amount)
+    }).format(display)
   }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(display)
 }
