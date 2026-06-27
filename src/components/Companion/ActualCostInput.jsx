@@ -3,55 +3,67 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 import { formatCurrency, formatDisplayAmount } from '../../utils/currency'
 
 /**
- * All internal costs are stored in USD. This component:
- * - Displays input in the user's current currency (₹ or $)
- * - Converts entered value back to USD before calling onSave
- * - Re-syncs display when the user toggles currency
- * - Computes delta in display currency so comparison is always apples-to-apples
+ * Actual cost input with captured-rate support.
+ *
+ * Display uses the captured rate (actualCostUsdRate) when available — historical accuracy.
+ * On save, re-captures the CURRENT live rate so editing always records the rate at that moment.
+ * onSave receives { usdValue, capturedRate, capturedAt }.
+ *
+ * Currency toggle re-syncs the display value automatically.
  */
-const ActualCostInput = ({ estimatedCost, actualCost, onSave }) => {
-  const { currency, usdToInr } = useCurrency()
+const ActualCostInput = ({ estimatedCost, actualCost, actualCostUsdRate, onSave }) => {
+  const { currency, usdToInr, getRateAt } = useCurrency()
+
+  // For display/init: prefer the historical captured rate, fall back to live rate
+  const effectiveRate = actualCostUsdRate ?? usdToInr
 
   const toDisplay = (usd) => {
     if (usd == null || isNaN(usd)) return ''
-    const val = currency === 'INR' ? Math.round(usd * usdToInr) : parseFloat(usd.toFixed(2))
+    const val = currency === 'INR'
+      ? Math.round(usd * (actualCostUsdRate ?? usdToInr))
+      : parseFloat(Number(usd).toFixed(2))
     return String(val)
-  }
-
-  const toUsd = (displayStr) => {
-    const num = Number(displayStr)
-    if (displayStr === '' || isNaN(num) || num < 0) return null
-    return currency === 'INR' ? num / usdToInr : num
   }
 
   const [value, setValue] = useState(() => toDisplay(actualCost))
 
-  // Re-sync display value when user toggles INR ↔ USD
+  // Re-sync when currency toggles OR live rate refreshes OR parent provides new captured rate
   useEffect(() => {
     setValue(toDisplay(actualCost))
-  }, [currency, usdToInr]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currency, usdToInr, actualCostUsdRate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayActual = value === '' ? null : Number(value)
   const hasActual = displayActual != null && !isNaN(displayActual)
 
-  // Estimate in display currency — same unit as what the user typed
+  // Delta: both sides in display currency using the same effective rate
   const estimatedInDisplay = estimatedCost != null
-    ? (currency === 'INR' ? estimatedCost * usdToInr : estimatedCost)
+    ? (currency === 'INR' ? estimatedCost * effectiveRate : estimatedCost)
     : null
 
   const delta = hasActual && estimatedInDisplay != null ? displayActual - estimatedInDisplay : null
   const deltaMeaningful = delta !== null && Math.abs(delta) > (currency === 'INR' ? 5 : 0.05)
 
   const handleBlur = () => {
-    onSave?.(toUsd(value))
+    const num = Number(value)
+    if (value === '' || isNaN(num) || num < 0) {
+      onSave?.({ usdValue: null, capturedRate: null, capturedAt: null })
+      return
+    }
+    const usdValue = currency === 'INR' ? num / usdToInr : num
+    const { rate } = getRateAt()
+    const capturedRate = currency === 'INR' ? rate : null
+    const capturedAt = new Date().toISOString()
+    onSave?.({ usdValue, capturedRate, capturedAt })
   }
 
   const symbol = currency === 'INR' ? '₹' : '$'
   const step = currency === 'INR' ? '1' : '0.01'
 
+  // Show historical rate indicator when displaying a captured entry
+  const isHistorical = actualCostUsdRate != null && Math.abs(actualCostUsdRate - usdToInr) > 0.01
+
   return (
     <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-      {/* Row: label + input + est reference */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Actual spent</span>
 
@@ -74,9 +86,18 @@ const ActualCostInput = ({ estimatedCost, actualCost, onSave }) => {
             est.&nbsp;{formatCurrency(estimatedCost, currency, usdToInr)}
           </span>
         )}
+
+        {isHistorical && (
+          <span
+            className="text-[10px] text-slate-300 cursor-default"
+            title={`Recorded at rate ₹${actualCostUsdRate?.toFixed(2)}/USD. Current rate is ₹${usdToInr?.toFixed(2)}/USD.`}
+          >
+            hist.
+          </span>
+        )}
       </div>
 
-      {/* Delta badge — delta is already in display currency; use formatDisplayAmount, NOT formatCurrency */}
+      {/* Delta — delta is in display currency; use formatDisplayAmount (no double-conversion) */}
       {deltaMeaningful && (
         <div className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full
           ${delta > 0
