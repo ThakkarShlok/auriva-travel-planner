@@ -35,6 +35,23 @@ const TripCard = ({ trip, image, onView, onDelete, onDuplicate }) => {
             {trip.budget}
           </span>
         </div>
+        {/* Hover-reveal secondary actions slide in from top-right */}
+        <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={(e) => { e.stopPropagation(); onDuplicate?.() }}
+            title="Duplicate trip"
+            className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-slate-600 hover:bg-white hover:text-primary-700 shadow-sm transition-all"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete?.() }}
+            title="Delete trip"
+            className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-slate-600 hover:bg-white hover:text-red-600 shadow-sm transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="p-5">
@@ -55,25 +72,9 @@ const TripCard = ({ trip, image, onView, onDelete, onDuplicate }) => {
           </span>
         </div>
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="primary" onClick={onView} className="flex-1" icon={Eye}>
-            View
-          </Button>
-          <button
-            onClick={onDuplicate}
-            title="Duplicate trip"
-            className="p-2 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            title="Delete trip"
-            className="p-2 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        <Button size="sm" variant="primary" onClick={onView} fullWidth icon={Eye}>
+          View itinerary
+        </Button>
       </div>
     </div>
   )

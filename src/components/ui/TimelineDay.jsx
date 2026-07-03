@@ -146,7 +146,7 @@ const TimelineDay = ({ day, index, defaultOpen = true, weather, companion }) => 
               key={idx}
               ref={el => activityRefs.current[idx] = el}
               className={[
-                'flex gap-4 rounded-xl transition-all duration-500',
+                'flex gap-4 rounded-xl transition-all duration-200',
                 activity.checked ? 'opacity-60' : '',
                 highlightedIdx === idx
                   ? 'ring-2 ring-amber-400 ring-offset-2 bg-amber-50/40 px-2 -mx-2'
