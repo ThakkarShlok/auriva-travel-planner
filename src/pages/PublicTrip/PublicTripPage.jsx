@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronRight, Download } from 'lucide-react'
+import { ChevronRight, Download, Clock, Users, DollarSign } from 'lucide-react'
 import { fetchPublicTrip, downloadPublicTripPDF } from '../../services/tripsService'
 import toast from 'react-hot-toast'
-import PageHeader from '../../components/UI/PageHeader'
 import Card from '../../components/UI/Card'
 import TimelineDay from '../../components/UI/TimelineDay'
 import WeatherForecastCard from '../../components/UI/WeatherForecastCard'
@@ -113,24 +112,35 @@ const PublicTripPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="pt-16 md:pt-20">
-        <PageHeader
-          variant="hero"
-          eyebrow="SHARED ITINERARY"
-          title={trip.destination}
-          description={`${trip.duration} days · ${trip.travelers} traveler${trip.travelers !== 1 ? 's' : ''} · ${trip.budget} budget`}
-          actions={
-            <Button
-              variant="hero"
-              size="sm"
-              icon={Download}
-              onClick={handleDownloadPDF}
-              loading={isDownloading}
-            >
-              Download PDF
-            </Button>
-          }
-        />
+      {/* Custom hero — Fraunces serif destination title + stats row */}
+      <div className="pt-16 md:pt-20 hero-gradient">
+        <div className="container-custom py-12 md:py-16">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-300 mb-4">
+            Shared Itinerary
+          </p>
+          <h1
+            className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
+            {trip.destination}
+          </h1>
+          {/* Stats row */}
+          <div className="flex flex-wrap gap-3 mb-8">
+            {[
+              { icon: Clock, label: `${trip.duration} days` },
+              { icon: Users, label: `${trip.travelers} traveler${trip.travelers !== 1 ? 's' : ''}` },
+              { icon: DollarSign, label: `${trip.budget.charAt(0).toUpperCase() + trip.budget.slice(1)} budget` },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 text-white">
+                <Icon className="w-4 h-4 text-indigo-300" />
+                <span className="text-sm font-semibold">{label}</span>
+              </div>
+            ))}
+          </div>
+          <Button variant="hero" size="sm" icon={Download} onClick={handleDownloadPDF} loading={isDownloading}>
+            Download PDF
+          </Button>
+        </div>
       </div>
 
       <div className="container-custom py-8">
