@@ -76,35 +76,36 @@ const Navbar = () => {
 
           {/* Auth section */}
           <div className="flex items-center gap-3">
+            {/* Currency toggle — visible for all users since public pages show prices */}
+            <div className="hidden md:flex items-center gap-1 bg-slate-100 rounded-full p-0.5">
+              <button
+                onClick={() => setCurrency('INR')}
+                className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
+                  currency === 'INR' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                ₹ INR
+              </button>
+              <button
+                onClick={() => setCurrency('USD')}
+                className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
+                  currency === 'USD' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                $ USD
+              </button>
+            </div>
             <SignedOut>
               <div className="flex items-center gap-2">
                 <Link to="/login" className="px-4 py-2 text-gray-600 hover:text-primary-800 transition font-medium">
-                  Login
+                  Sign In
                 </Link>
-                <Link to="/register" className="px-5 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900 transition shadow-sm">
-                  Sign Up
+                <Link to="/register" className="px-5 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900 transition shadow-sm font-semibold">
+                  Get Started
                 </Link>
               </div>
             </SignedOut>
             <SignedIn>
-              <div className="hidden md:flex items-center gap-1 mr-3 bg-slate-100 rounded-full p-0.5">
-                <button
-                  onClick={() => setCurrency('INR')}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
-                    currency === 'INR' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  ₹ INR
-                </button>
-                <button
-                  onClick={() => setCurrency('USD')}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
-                    currency === 'USD' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  $ USD
-                </button>
-              </div>
               <UserButton
                 appearance={{ elements: { avatarBox: 'w-9 h-9' } }}
                 afterSignOutUrl="/"
@@ -120,9 +121,13 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-100">
+        {/* Mobile Menu — smooth slide-in via max-height transition */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="py-4 border-t border-gray-100">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -141,26 +146,40 @@ const Navbar = () => {
                 )}
               </Link>
             ))}
+            {/* Currency toggle in mobile menu */}
+            <div className="mt-2 mx-4 flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+              {['INR', 'USD'].map(cur => (
+                <button
+                  key={cur}
+                  onClick={() => setCurrency(cur)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    currency === cur ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  {cur === 'INR' ? '₹ INR' : '$ USD'}
+                </button>
+              ))}
+            </div>
             <SignedOut>
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg"
+                  className="block px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
                 >
-                  Login
+                  Sign In
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-3 bg-primary-800 text-white rounded-lg mt-2 text-center"
+                  className="block px-4 py-3 bg-primary-800 text-white rounded-lg mt-2 text-center font-semibold"
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </div>
             </SignedOut>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )

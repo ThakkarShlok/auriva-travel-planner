@@ -47,6 +47,21 @@ const AuthLayout = ({ title, subtitle, children }) => {
           {title && <h1 className="text-2xl font-bold text-gray-900 mb-1">{title}</h1>}
           {subtitle && <p className="text-gray-500 mb-8">{subtitle}</p>}
           {children}
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Why sign in?</p>
+            <ul className="space-y-2">
+              {[
+                'Save trips and access them from any device',
+                'Refine your itinerary with AI as you plan',
+                'Track actual spend and build your travel history',
+              ].map((reason) => (
+                <li key={reason} className="flex items-start gap-2 text-sm text-slate-500">
+                  <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-accent-400 flex-shrink-0" />
+                  {reason}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
