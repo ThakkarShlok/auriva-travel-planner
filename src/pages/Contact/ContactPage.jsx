@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Mail, Phone, Clock, MessageCircle, Send, CheckCircle, Github, Linkedin, Sparkles, Star } from 'lucide-react'
+import { Mail, Phone, Clock, MessageCircle, Send, CheckCircle, Github, Linkedin, Sparkles, Star, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitContactForm } from '../../services/emailService'
 import { CONTACT, mailto, telLink, whatsappLink } from '../../constants/contact'
@@ -158,9 +158,19 @@ const ContactPage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary-600 text-white py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-primary-600 text-white py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
               >
-                {isSubmitting ? 'Sending...' : <><Send className="w-5 h-5" /> Send Message</>}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>

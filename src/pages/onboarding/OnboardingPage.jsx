@@ -71,6 +71,16 @@ const OnboardingPage = () => {
     navigate(isAuthenticated ? '/planner' : '/login', isAuthenticated ? undefined : { state: { from: { pathname: '/planner' } } })
   }
 
+  const filledCount = [
+    destination.trim() !== '',
+    startDate !== '',
+    endDate !== '',
+    budget !== 'moderate',
+    selectedInterests.length > 0 || customInterests.trim() !== '',
+  ].filter(Boolean).length
+
+  const totalFields = 5
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="pt-16 md:pt-20">
@@ -84,6 +94,20 @@ const OnboardingPage = () => {
 
       <div className="container-custom max-w-3xl mx-auto py-10">
         <Card padding="lg">
+          {/* Form completion progress */}
+          <div className="mb-8">
+            <div className="flex justify-between text-xs font-semibold text-slate-400 mb-2">
+              <span>Trip details</span>
+              <span>{filledCount} of {totalFields} filled</span>
+            </div>
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary-700 rounded-full transition-all duration-300"
+                style={{ width: `${(filledCount / totalFields) * 100}%` }}
+              />
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Destination */}
             <div>
