@@ -1,0 +1,16 @@
+# The original Windows checkout may contain untracked case-variant leftovers
+# after cleaning duplicate paths from git's tree. Never upload them in Vercel
+# CLI deployments; the committed capital-case paths are the source of truth.
+src/components/cards/
+src/components/layout/
+src/components/ui/
+src/pages/dashboard/
+src/pages/discover/
+src/pages/onboarding/
+src/pages/planner/
+
+# Local-only build/dependency output.
+node_modules/
+dist/
+.env
+.env.*

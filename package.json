@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "node api/serve-local.mjs",
+    "prebuild": "node scripts/check-head-imports.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
