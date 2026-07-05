@@ -1,53 +1,110 @@
-# Auriva — AI Travel Planner
+<div align="center">
 
-[![React](https://img.shields.io/badge/React-18-61dafb?logo=react)](https://reactjs.org/)
-[![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2-764abc?logo=redux)](https://redux-toolkit.js.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite)](https://vitejs.dev/)
+# Auriva
 
-AI-powered travel itinerary generator. Enter a destination, duration, budget, and interests — Auriva streams a personalised day-by-day plan and lets you refine it conversationally.
+### An AI travel planner you can actually use *during* the trip.
 
-## What it does
+Generates day-by-day itineraries grounded in real weather, persists structured trip data, works offline, and learns from completed trips.
 
-- Fill in a destination, start date, duration, budget, and interests on the Onboarding page
-- The app streams a day-by-day itinerary in real time using Server-Sent Events (Groq → SSE → client)
-- Generation is grounded in a live 14-day weather forecast and enforces USD pricing so currency conversion stays correct
-- Refine the result conversationally via the sidebar chat panel
-- Save trips to your account, duplicate, or delete them from the Dashboard
-- An AI chat assistant can answer follow-up travel questions
+[![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Postgres](https://img.shields.io/badge/Neon-Postgres-00e599?logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Groq](https://img.shields.io/badge/Groq-Llama_3.3-f55036)](https://groq.com/)
+[![Clerk](https://img.shields.io/badge/Clerk-Auth-6c47ff)](https://clerk.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-Deploy-000?logo=vercel&logoColor=white)](https://vercel.com/)
 
-### Companion Mode (Phase 9)
-Auriva works as a travel companion during your trip, not just before it. When you set a start date, the itinerary detail view auto-scrolls to today's day card, marks it with a "Today" badge, and enables per-activity checkboxes, personal notes (auto-saved with 800ms debounce), and actual-cost tracking with a delta vs estimated cost. The packing list converts to an interactive checklist with "Save as checklist." All mutations are optimistic (no loading spinners) and offline-resilient: changes made without a network connection are queued in localStorage and replayed automatically on reconnect. The app is installable as a PWA — your most recently opened trip is available offline via a service worker cache.
-- View costs in INR or USD — toggle persists per browser
-- Admins can inspect generation volume, latency, and error rate at `/admin/metrics`
+**[Live demo](https://auriva.app)** &nbsp;·&nbsp; **[About the project](https://auriva.app/about)** &nbsp;·&nbsp; **[Phase reports](#phase-reports)**
 
-### Live Trip Mode (Phase 11a)
-Three subsystems enhance the "today" experience once a trip is active:
+</div>
 
-**Live weather refresh** — today's day card silently re-fetches a fresh 3-day forecast on mount and overlays it on the day header without overwriting the historical 14-day JSONB record. A compact "Updated Nm ago" chip appears in the card header; a spinning indicator shows during the fetch. Failures are silent and non-blocking.
+---
 
-**Timestamp-anchored exchange rates** — when you enter an actual cost, Auriva captures the exact USD→INR rate at that moment (`actualCostUsdRate`) alongside the timestamp (`actualCostCapturedAt`) and stores both on the activity JSONB. Revisiting the trip months later shows the same delta even if the FX rate has moved — recorded history is immutable.
+## What it is
 
-**"Where am I" geolocation hint** — an opt-in "Find nearest activity" button appears on today's card when the itinerary contains activities with coordinates (added by Groq at generation time). Tapping it triggers a one-shot `getCurrentPosition` call; if an activity is within 5 km, an amber "You're near [Activity] · distance" pill appears. Geolocation is never auto-requested and never persisted; dismissing it writes a session flag so the prompt stays gone for the browser session.
+Most AI travel tools stop helping the moment they hand you the itinerary. Auriva keeps going.
+
+It writes day-by-day itineraries grounded in the real 14-day forecast for your destination, persists every trip as typed Postgres rows (not chat history), works offline on the plane via a service worker, and after two completed trips extracts your travel patterns to ground future generations.
+
+**Architectural principle:** *LLM for creative reasoning. Deterministic systems for grounded data.* Weather, currency, and geocoding aren't AI capabilities — they're API calls that happen *before* the prompt. The AI sees the real conditions and reasons inside them.
+
+---
+
+## What makes it different
+
+| | What Auriva does |
+|---|---|
+| **Grounded in real weather** | Fetches the destination's 14-day forecast server-side, caches for 6 hours, and injects it into the system prompt before generation. Rain on day three? Indoor swaps appear — not because the model guessed, because the data was in the prompt. |
+| **Designed for during the trip** | Check off activities, log actual costs vs. estimated, take notes — all offline-capable via a service worker. Mutations queue in localStorage and replay when signal returns. Installable as a PWA. |
+| **Structured memory, not chat history** | Every trip is a typed Postgres row, not a fuzzy conversation log. After two completed trips, Auriva extracts pace, budget tendency, and category preferences via a deterministic-stats pass plus a Groq qualitative-extraction pass, and uses them as input next time. User overrides win. |
+| **Live trip mode** | Once a trip is active: 3-day forecast auto-refreshes on the today card, exchange rates are captured at the moment of cost entry (immutable history), and an opt-in "Find nearest activity" hint surfaces the closest item by browser geolocation. |
+| **Multi-currency, single source of truth** | LLM is locked to USD. Client converts at view time using cached FX rates. INR is the default for India users; USD is toggleable. PDFs always render in USD with an explicit label. |
+| **Built-in observability** | Every Groq call is logged with model, latency, tokens, status, and context flags. Admin dashboard at `/admin/metrics` (email-gated) shows a 7-day summary, daily volume, endpoint breakdown, and recent log stream. |
+
+---
+
+## Phase reports
+
+Auriva shipped across **eleven phases**. Each one had a 20-item verification checklist before release.
+
+| Phase | Title | What landed |
+|---|---|---|
+| 1 | Foundation | Project rename (voyage → Auriva), dead-code purge, naming-convention pass, UUID-based IDs replacing `Date.now()` |
+| 2 – 3 | Design system | Tailwind tokens; primitives (`PageHeader`, `Card`, `Section`, `Button` variants, `StatsBand`, `FeatureGrid`, `TimelineDay`); utility classes (`hero-gradient`, `container-custom`, `section-padding`) |
+| 4 | API hardening | Custom Vite `apiPlugin` so a single `npm run dev` runs everything; `assertGroqKey` BOM/whitespace validation; outer try/catch making `FUNCTION_INVOCATION_FAILED` impossible |
+| 5 | Visual unification | Indigo + amber + slate palette enforced across every page; one hero + one warm CTA per page; restraint principle codified |
+| 6 | Streaming | SSE itinerary generation; `partial-json` progressive parsing; refinement endpoint; `RefinementPanel` (desktop sidebar / mobile bottom-sheet); `AbortController` cleanup |
+| 7 | Auth + persistence | Clerk auth (email + Google + GitHub); zero-dep JWT verification against JWKS; Neon Postgres + Drizzle ORM; trip / day / conversation persistence; public-share endpoints; OG meta tags |
+| **8** | **Real-world context** | **Open-Meteo weather grounding, Nominatim geocoding fallback, FX-rate currency layer, generation-call observability with admin metrics dashboard** |
+| **9** | **Companion mode** | **Trip start dates, activity-level fields (checked / notes / actual cost), today-detection auto-scroll, service-worker offline cache, localStorage mutation queue, installable PWA** |
+| **10** | **Profile intelligence** | **Hybrid trip-completion detection, deterministic analytics, Groq qualitative preference extraction, user-overrideable inference, preference injection into future generations** |
+| 11a | Live trip mode | Live weather refresh on today's card; timestamp-anchored FX-rate capture on actual cost entry; opt-in geolocation "nearest activity" hint |
+| 11b | UI/UX polish | Bento-grid hero, featured-trip card on Dashboard, editorial layout on Discover, skeleton loaders, focus rings, print-friendly itinerary mode |
+
+The three **bolded** phases carry the architectural story. The rest are foundation, hardening, and polish.
+
+---
 
 ## Tech stack
 
-| | |
+| Layer | Choices |
 |---|---|
-| Frontend | React 18, Vite 5, React Router v6 |
-| State | Redux Toolkit |
-| Styling | Tailwind CSS v3, custom design tokens |
-| Auth | Clerk (email/password, Google OAuth, GitHub OAuth) |
-| Database | Neon serverless Postgres + Drizzle ORM |
-| AI | Groq (Llama 3.3 70B for itineraries, Llama 3.1 8B for chat) |
-| Icons | Lucide React |
-| Deployment | Vercel |
+| **Frontend** | React 18 · Vite 5 · React Router 6 · Redux Toolkit · Tailwind CSS v3 · Lucide icons |
+| **API runtime** | Vercel serverless functions (custom Vite `apiPlugin` in dev — no `vercel dev` required) |
+| **Database** | Neon Postgres 17 · Drizzle ORM · `@neondatabase/serverless` HTTP driver |
+| **Auth** | Clerk (email + Google + GitHub OAuth) · zero-dep JWT verification with cached JWKS |
+| **AI** | Groq inference · `llama-3.3-70b-versatile` (itineraries, JSON mode, SSE streaming) · `llama-3.1-8b-instant` (chat) |
+| **Real-world data** | Open-Meteo (weather) · OpenStreetMap Nominatim (geocoding fallback) · open.er-api.com (FX rates) |
+| **PWA + offline** | Custom service worker · localStorage mutation queue · `online`/`offline` event subscription |
+| **Email** | EmailJS (browser-side, Gmail integration, no domain verification required) |
+| **PDF** | `@react-pdf/renderer` server-side · Inter font · indigo/amber palette |
+| **Hosting** | Vercel (frontend + serverless API) · Neon (database, AWS ap-south-1 Mumbai) |
 
-## Local development setup
+### Why these choices
 
-### 1. Install dependencies
+- **Neon over Supabase** — first-class serverless pooling, database branching, free tier doesn't auto-pause.
+- **Drizzle over Prisma** — TypeScript-first schema-as-code, lighter runtime, explicit Neon HTTP driver support. Tradeoff accepted: no transactions on the HTTP driver, so all writes are sequential `await`s.
+- **Clerk over rolling auth** — production-grade OAuth, MFA, and account linking out of the box. The boring stuff is hard to get right.
+- **Groq over OpenAI** — order-of-magnitude faster inference at comparable quality for itinerary generation. Llama 3.3 70B is the sweet spot for cost/quality.
+- **EmailJS over Resend/SendGrid** — completely free for portfolio use, no domain verification, Gmail integration in five minutes. Originally tried Resend; hit the unverified-recipient block on the free tier, migrated. Documented in the commit history.
+- **Custom Vite `apiPlugin` over `vercel dev`** — `vercel dev` had Windows IPC issues that cost a day; a small Vite plugin solved it permanently and shaved 4 seconds off cold-start.
+
+---
+
+## Quick start
+
+### Prerequisites
+
+- Node 18+
+- A Neon project (free tier is enough)
+- A Clerk application (free tier is enough)
+- A Groq API key (free tier is enough)
+
+### 1. Clone and install
 
 ```bash
+git clone https://github.com/ThakkarShlok/auriva.git
+cd auriva
 npm install
 ```
 
@@ -57,18 +114,29 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in `.env.local`:
+Required variables:
 
-| Variable | Where to get it |
-|---|---|
-| `GROQ_API_KEY` | https://console.groq.com |
-| `DATABASE_URL` | Neon dashboard → Connection Details → Pooled connection string |
-| `DATABASE_URL_UNPOOLED` | Neon dashboard → Connection Details → Direct connection string |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys |
-| `CLERK_SECRET_KEY` | Clerk dashboard → API Keys |
-| `CLERK_WEBHOOK_SECRET` | Added after webhook setup — see below |
-| `VITE_EMAILJS_*` | https://www.emailjs.com → Dashboard (optional — enables email delivery + contact form, see below) |
-| `ADMIN_EMAILS` / `VITE_ADMIN_EMAILS` | Your own Clerk account email — gates `/admin/metrics` (optional) |
+```bash
+GROQ_API_KEY=gsk_...                    # console.groq.com
+DATABASE_URL=postgresql://...           # Neon → Connection Details → Pooled
+DATABASE_URL_UNPOOLED=postgresql://...  # Neon → Direct (no -pooler in hostname)
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...  # Clerk → API Keys
+CLERK_SECRET_KEY=sk_test_...            # Clerk → API Keys
+```
+
+Optional variables:
+
+```bash
+CLERK_WEBHOOK_SECRET=whsec_...          # only needed in production with webhooks
+VITE_EMAILJS_SERVICE_ID=service_...     # email delivery + contact form
+VITE_EMAILJS_PUBLIC_KEY=...
+VITE_EMAILJS_TEMPLATE_TRIP=template_...
+VITE_EMAILJS_TEMPLATE_CONTACT=template_...
+ADMIN_EMAILS=you@example.com            # server-side admin gate for /admin/metrics
+VITE_ADMIN_EMAILS=you@example.com       # client-side admin UI render check
+```
+
+> **`.env.local` BOM warning:** if PowerShell created the file via `echo`, it may have a UTF-8 BOM. Verify with `xxd .env.local | head -3` — the first bytes should be the env var name, never `ef bb bf`. If BOM is present, rewrite with `printf 'GROQ_API_KEY=...\n' > .env.local`.
 
 ### 3. Push the database schema
 
@@ -76,7 +144,7 @@ Fill in `.env.local`:
 npm run db:push
 ```
 
-Verify in the Neon SQL editor — `SELECT * FROM users;` should return 0 rows with the table created.
+Verify in the Neon SQL editor — `SELECT * FROM users;` should return zero rows with the table created.
 
 ### 4. Start the dev server
 
@@ -84,14 +152,22 @@ Verify in the Neon SQL editor — `SELECT * FROM users;` should return 0 rows wi
 npm run dev
 ```
 
-API routes are served by a Vite plugin — no separate server process or `vercel dev` needed.
+Both frontend and API routes run together on a single port — the Vite `apiPlugin` handles `/api/*` requests in dev so there's no separate server process.
 
-## Authentication and database
-
-### Schema commands
+### 5. Health check
 
 ```bash
-npm run db:push       # sync schema directly to database (development)
+curl http://localhost:5174/api/health
+```
+
+Returns `ok: true` when all four checks pass (Groq key, `DATABASE_URL`, `CLERK_SECRET_KEY`, database connection).
+
+---
+
+## Database commands
+
+```bash
+npm run db:push       # sync schema directly to database (use during development)
 npm run db:generate   # generate SQL migration files from schema changes
 npm run db:migrate    # apply pending migration files (production workflow)
 npm run db:studio     # open Drizzle Studio at http://localhost:4983
@@ -99,141 +175,156 @@ npm run db:studio     # open Drizzle Studio at http://localhost:4983
 
 Use `db:push` for rapid iteration. Use `db:generate` + `db:migrate` for production deployments.
 
-### Webhook setup (one-time)
+---
 
-Clerk fires webhook events when users sign up or update their profile. The `/api/webhooks/clerk` endpoint mirrors these into the local `users` table.
+## Clerk webhook setup (optional)
 
-**Local development with ngrok:**
+Auriva works without webhooks — users can sign in/out via Clerk and trips persist correctly. The webhook only ensures the local `users` table stays in sync with Clerk's source of truth (helpful for analytics and admin tooling).
 
-1. `npx ngrok http 5174`
-2. Clerk Dashboard → Webhooks → Add Endpoint → paste the ngrok HTTPS URL + `/api/webhooks/clerk`
-3. Subscribe to events: `user.created`, `user.updated`, `user.deleted`
-4. Copy the signing secret (`whsec_...`) into `.env.local` as `CLERK_WEBHOOK_SECRET`
+**Local dev with ngrok:**
 
-**Note:** The app works without webhooks configured. Users can sign in/out via Clerk. The webhook only ensures the local `users` table stays in sync. Phase 7B (trip persistence) requires it.
+```bash
+npx ngrok http 5174
+```
 
-### Why these choices
+1. Clerk Dashboard → Webhooks → Add Endpoint → paste the ngrok HTTPS URL + `/api/webhooks/clerk`
+2. Subscribe to `user.created`, `user.updated`, `user.deleted`
+3. Copy the signing secret into `.env.local` as `CLERK_WEBHOOK_SECRET`
 
-- **Neon**: Free tier doesn't auto-pause. First-class serverless pooling and database branching.
-- **Clerk**: Production-grade auth with OAuth flows, session management, MFA, and account linking out of the box.
-- **Drizzle**: TypeScript-first schema-as-code, lighter runtime than Prisma, explicit Neon driver support.
+---
+
+## EmailJS setup (optional)
+
+EmailJS handles trip delivery and contact form submissions browser-side — no domain verification required and no backend SMTP credentials to manage.
+
+### One-time setup
+
+1. Sign up at [emailjs.com](https://www.emailjs.com) (free tier: 200 emails/month)
+2. **Email Services** → Add → Gmail → connect `support.auriva@gmail.com` (or your own)
+3. Create two templates:
+
+<details>
+<summary><strong>Template 1 — <code>trip_itinerary</code></strong> (what recipients see when you email them a trip)</summary>
+
+**Subject:** `Your {{trip_duration}}-day trip to {{trip_destination}}`
+
+**Reply-To:** `{{reply_to}}` (so replies go to the sender, not Auriva)
+
+**Body (HTML):**
+```html
+<p>Hi {{to_name}},</p>
+<p>Here's your AI-generated itinerary for <strong>{{trip_destination}}</strong>:</p>
+<p><strong>{{trip_duration}} days</strong> · {{trip_travelers}} travelers · {{trip_budget}} budget</p>
+<p>{{trip_overview}}</p>
+<p><a href="{{share_url}}" style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View full itinerary</a></p>
+<p style="color:#94a3b8;font-size:12px;">Generated by Auriva</p>
+```
+</details>
+
+<details>
+<summary><strong>Template 2 — <code>contact_form</code></strong> (what you receive when someone uses the contact page)</summary>
+
+**Subject:** `[Auriva Contact] {{subject}}`
+
+**Reply-To:** `{{reply_to}}` (so Gmail Reply goes to the user, not yourself)
+
+**Body:**
+```
+New contact form submission:
+
+From: {{from_name}} <{{from_email}}>
+Subject: {{subject}}
+
+{{message}}
+```
+</details>
+
+4. Add credentials to `.env.local` (see the optional block above).
+
+### Architecture note
+
+EmailJS is browser-side — the `VITE_EMAILJS_PUBLIC_KEY` is intentionally client-visible (that's how EmailJS works). Sensitive operations (PDF generation, trip data reads) remain server-side via `/api/download-pdf` and gated database queries.
+
+---
 
 ## Project structure
 
 ```
 src/
-  components/      UI primitives, layout, chatbot, refinement panel
-  db/              Drizzle schema (schema.js) + database client (index.js)
-  hooks/           usePageTitle, useDebounce
-  pages/           Route-level page components
-  routes/          PrivateRoute guard (Clerk-backed)
-  services/        API clients — streaming, groq, localStorage
-  store/           Redux slices — trip, auth (Phase 7B stub)
+├─ components/        UI primitives (Card, Section, Button, ...)
+│  ├─ Companion/      Today badge, activity checkbox, notes, cost input, geolocation
+│  ├─ Layout/         Navbar, footer, currency toggle
+│  ├─ Refinement/     Conversational itinerary editor (sidebar + bottom-sheet)
+│  └─ Sharing/        Share modal with native share + EmailJS fallback
+├─ contexts/          CurrencyContext (USD ↔ INR toggle, localStorage-persisted)
+├─ db/                Drizzle schema + Neon HTTP client + per-domain queries
+├─ hooks/             usePageTitle, useDebounce, useOnlineStatus, useGeolocation, useLiveWeatherRefresh
+├─ pages/             Route-level pages (Home, About, Planner, ItineraryDetail, ...)
+├─ pdf/               TripPDFDocument — server-side @react-pdf/renderer
+├─ services/          API clients (streaming, trips, preferences, email)
+├─ store/             Redux slices (trip, auth, preferences)
+└─ utils/             tripAnalytics, currency, dates, geo, mutationQueue
 api/
-  _lib/groq.js     Shared Groq key assertion
-  webhooks/        Clerk webhook handler
-  *.js             API route handlers
-drizzle/           Generated SQL migration files
+├─ _lib/              groq.js (key validation + GroqError), auth.js (JWT verify)
+├─ admin/             metrics.js (email-gated dashboard data)
+├─ preferences/       extract.js, index.js (Phase 10)
+├─ trips/             [id].js, duplicate.js, index.js
+├─ weather/           refresh.js (Phase 11a live refresh)
+├─ webhooks/          clerk.js
+└─ *.js               generate-itinerary-stream.js, refine-itinerary.js, download-pdf.js, ...
+public/
+├─ sw.js              Service worker (cache-first shell, network-first trip data)
+└─ manifest.webmanifest
+scripts/
+├─ run-migration-phase8.mjs
+├─ run-migration-phase9.mjs
+├─ run-migration-phase10.mjs
+├─ run-migration-phase11a.mjs
+└─ backfill-weather.mjs
 ```
 
-## Health check
+---
+
+## Admin metrics
+
+Add your Clerk email to both server-side and client-side env vars:
 
 ```bash
-curl http://localhost:5174/api/health
+ADMIN_EMAILS=your@email.com           # server-side authorization (the actual security boundary)
+VITE_ADMIN_EMAILS=your@email.com      # client-side UI render check
 ```
 
-Returns `ok: true` when all four checks (Groq key, DATABASE_URL, CLERK_SECRET_KEY, database connection) are healthy.
+Sign in with that email and visit `/admin/metrics`. The page shows:
 
-## EmailJS setup
+- 7-day summary (total generations, errors, median latency, total tokens)
+- 14-day daily volume bar chart
+- Endpoint breakdown table (`/api/generate-itinerary-stream`, `/api/refine-itinerary`, `/api/chat`)
+- Recent generation log with model, latency, status, and context flags
 
-Auriva uses [EmailJS](https://www.emailjs.com) for transactional emails (trip delivery + contact form). EmailJS sends through your connected Gmail account directly from the browser — no domain verification required, no server needed for email.
+Both client-side rendering and server-side authorization check the email allowlist independently.
 
-### One-time setup
+---
 
-1. Sign up at https://www.emailjs.com (free: 200 emails/month)
-2. **Add Email Service**: Dashboard → Email Services → Add → Gmail → connect your Gmail
-3. **Create two templates**:
+## Live trip mode (Phase 11a)
 
-   **Template 1 — `trip_itinerary`** (what recipients get when you email them a trip):
-   - To Email: `{{to_email}}`
-   - From Name: Auriva
-   - Reply-To: `{{reply_to}}`
-   - Subject: `Your {{trip_duration}}-day trip to {{trip_destination}}`
-   - Body (HTML):
-     ```html
-     <p>Hi {{to_name}},</p>
-     <p>Here's your AI-generated itinerary for <strong>{{trip_destination}}</strong>:</p>
-     <p><strong>{{trip_duration}} days</strong> · {{trip_travelers}} travelers · {{trip_budget}} budget</p>
-     <p>{{trip_overview}}</p>
-     <p><a href="{{share_url}}" style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View full itinerary</a></p>
-     <p>You can download a PDF copy from the trip page.</p>
-     <p style="color:#94a3b8;font-size:12px;">Generated by Auriva — AI Travel Strategist</p>
-     ```
+Three subsystems improve the "today" experience once a trip is active.
 
-   **Template 2 — `contact_form`** (what you receive when someone contacts you):
-   - To Email: `{{to_email}}` → will receive `support.auriva@gmail.com`
-   - From Name: `{{from_name}}`
-   - Reply-To: `{{reply_to}}` → user's email, so Gmail Reply goes directly to them
-   - Subject: `[Auriva Contact] {{subject}}`
-   - Body:
-     ```
-     New contact form submission:
+**Live weather refresh.** When the user opens a trip whose date range includes today, the day card silently re-fetches a fresh 3-day forecast on mount and overlays it on the day header. The historical 14-day JSONB on the trip row is never overwritten (preserved as the grounding record for the original generation). A small "Updated *N*m ago" chip appears in the header; failures are silent and non-blocking.
 
-     From: {{from_name}} <{{from_email}}>
-     Subject: {{subject}}
+**Timestamp-anchored exchange rates.** When the user enters an actual cost, Auriva captures the exact USD→INR rate at that moment alongside an ISO timestamp, and stores both on the activity JSONB (`actualCostUsdRate`, `actualCostCapturedAt`). Revisiting the trip months later shows the same delta even if the FX rate has moved — recorded history is immutable. Old entries without captured rates fall back to the live cached rate transparently.
 
-     {{message}}
-     ```
+**Opt-in "Where am I" hint.** An explicit "Find nearest activity" button appears on today's card when the itinerary contains activities with coordinates (Groq emits lat/lng at generation time as of Phase 11a). Tapping it triggers a one-shot `getCurrentPosition`. If an activity is within 5 km, an amber "You're near [Activity] · *distance*" pill appears. Geolocation is never auto-requested, never persisted, and dismissing it writes a session flag so the prompt stays gone for the browser session.
 
-4. **Get credentials** from the dashboard:
-   - Service ID → Email Services tab
-   - Public Key → Account → API Keys
-   - Template IDs → Email Templates tab (one per template)
-
-5. **Add to `.env.local`**:
-   ```
-   VITE_EMAILJS_SERVICE_ID=service_xxxxx
-   VITE_EMAILJS_PUBLIC_KEY=your_public_key
-   VITE_EMAILJS_TEMPLATE_TRIP=template_xxxxx
-   VITE_EMAILJS_TEMPLATE_CONTACT=template_yyyyy
-   ```
-
-### Architecture note
-
-EmailJS is browser-side — the `VITE_EMAILJS_PUBLIC_KEY` is intentionally client-visible (that's how EmailJS works). Sensitive operations (PDF generation, trip data reads) remain server-side via `/api/download-pdf`.
-
-<!-- TODO Phase 10: rate-limit contact form on client side (e.g. disable button for 60s after submit) to discourage spam -->
-
-## Real-world AI context
-
-Auriva is not "an LLM with a frontend" — it augments the LLM with real-world data the LLM cannot access alone:
-
-- **Weather**: Live 14-day forecasts from [Open-Meteo](https://open-meteo.com) (free, no key) are fetched server-side and cached for 6 hours in Postgres. The forecast is injected into the system prompt before generation, so the AI plans indoor alternatives on rainy days and adjusts activity timing for hot/cold weather. Weather chips appear on each day card. Forecasts are persisted on the trip at save time, so shared links and old trips keep their original forecast.
-
-- **Currency**: All AI responses are normalized to USD (enforced by the system prompt). The client converts to INR or USD at display time using rates fetched from [open.er-api.com](https://www.exchangerate-api.com/docs/free) and cached in Postgres for 24 hours. User preference is persisted in localStorage. Default: INR. PDFs always show USD (no React context available at server-render time).
-
-- **Observability**: Every Groq API call is logged to a `generation_logs` table with endpoint, model, latency, status, and context enrichments. An admin route at `/admin/metrics` (email-gated via `ADMIN_EMAILS`) shows a 7-day summary, 14-day daily volume, endpoint breakdown, and recent generation log.
-
-The architectural principle: the LLM is responsible for creative reasoning (what to do, in what order). Deterministic data (weather, currency, time) lives in code. This separation prevents LLM hallucinations in domains where ground truth exists.
-
-### Admin metrics
-
-Add your Clerk email to `.env.local`:
-
-```
-ADMIN_EMAILS=your@email.com
-VITE_ADMIN_EMAILS=your@email.com
-```
-
-Then visit `/admin/metrics` while signed in with that email. The page is gated both client-side (rendering check, UX only) and server-side (API authorization, the actual security boundary).
-
-<!-- TODO Phase 9 (companion mode): conversational multi-turn trip building instead of one-shot generation -->
-<!-- TODO Phase 10 (profile intelligence): remember user's past trips/preferences to personalize future generations -->
-<!-- TODO Phase 11 (deploy): confirm all env vars on Vercel, create public/og-default.png, custom Resend/EmailJS domain -->
+---
 
 ## Contact
 
-- Email: [support.auriva@gmail.com](mailto:support.auriva@gmail.com)
-- WhatsApp: +91 81286 98935
-- GitHub: [@ThakkarShlok](https://github.com/ThakkarShlok)
-- LinkedIn: [Shlok Thakkar](https://www.linkedin.com/in/shlok-thakkar-58a033354)
+[Email](mailto:support.auriva@gmail.com) &nbsp;·&nbsp; [GitHub @ThakkarShlok](https://github.com/ThakkarShlok) &nbsp;·&nbsp; [LinkedIn](https://www.linkedin.com/in/shlok-thakkar-58a033354) &nbsp;·&nbsp; WhatsApp: +91 81286 98935
+
+---
+
+<div align="center">
+
+*Built by Shlok Thakkar — third-year Computer Engineering, LDRP-ITR / KSV University.*
+
+</div>
