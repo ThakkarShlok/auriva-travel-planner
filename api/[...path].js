@@ -48,6 +48,14 @@ const patternRoutes = [
 ]
 
 function getRoutePath(req) {
+  const pathParam = req.query?.path
+  if (Array.isArray(pathParam)) {
+    return pathParam.join('/').replace(/^\/+|\/+$/g, '')
+  }
+  if (typeof pathParam === 'string' && pathParam.trim()) {
+    return pathParam.replace(/^\/+|\/+$/g, '')
+  }
+
   const url = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`)
   return url.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '')
 }
