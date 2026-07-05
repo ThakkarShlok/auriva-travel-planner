@@ -4,9 +4,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { updateOnboarding } from '../../store/slices/tripSlice'
 import usePageTitle from '../../hooks/usePageTitle'
 import {
-  Sparkles, ArrowRight, CloudRain, Cloud,
+  Sparkles, ArrowRight, CloudRain, Cloud, Sun,
   CheckCircle2, Circle, TrendingUp, Wifi, WifiOff,
-  Database, Github, Zap, FileText, MessageSquare
+  Database, Github, Zap, FileText, MessageSquare,
+  MapPin, Calendar, BarChart3, Code2
 } from 'lucide-react'
 import destinationsDatabase from '../../constants/destinations'
 import Button from '../../components/UI/Button'
@@ -22,22 +23,22 @@ const HomePage = () => {
 
   const featuredDestinations = destinationsDatabase.slice(0, 6)
 
+  // Streaming demo lines for the bento panel
   const streamLines = [
     'Generating itinerary for Tokyo...',
-    'Checking weather: Day 3 — light rain expected',
-    'Adjusting Day 3 — adding TeamLab indoor option',
-    'Pulling exchange rate — USD → INR cached',
-    'Day 1 — Asakusa & Senso-ji Temple',
-    'Day 2 — Shibuya, Harajuku, Meiji Shrine',
-    'Day 3 — TeamLab Planets, Roppongi Hills',
-    'Saving trip to your dashboard',
-    '✓ Itinerary ready in 7.4s',
+    'Forecast: Day 3 — light rain expected',
+    'Swapping Day 3 to indoor activities',
+    'Pulling FX rate · USD → INR cached',
+    'Day 1 · Asakusa · Senso-ji Temple',
+    'Day 2 · Shibuya · Harajuku · Meiji',
+    'Day 3 · TeamLab · Roppongi Hills',
+    '✓ Itinerary ready · 7.4s',
   ]
   const [streamCount, setStreamCount] = useState(1)
   useEffect(() => {
     const id = setInterval(() => {
       setStreamCount((c) => (c >= streamLines.length ? 1 : c + 1))
-    }, 850)
+    }, 900)
     return () => clearInterval(id)
   }, [streamLines.length])
 
@@ -56,9 +57,9 @@ const HomePage = () => {
   }
 
   const honestStats = [
-    { value: `${destinationsDatabase.length}`, label: 'Curated destinations', sub: 'In the discovery catalog' },
+    { value: `${destinationsDatabase.length}`, label: 'Curated destinations', sub: 'Hand-picked, browsable' },
     { value: '~8s', label: 'Median generation', sub: 'Streaming via Groq' },
-    { value: '14-day', label: 'Weather lookahead', sub: 'Cached for 6 hours' },
+    { value: '14-day', label: 'Weather lookahead', sub: 'Cached server-side' },
     { value: '0', label: 'Subscription tiers', sub: 'Free, today and later' },
   ]
 
@@ -73,13 +74,13 @@ const HomePage = () => {
       icon: <Wifi className="w-5 h-5" />,
       title: 'Designed for during the trip',
       description:
-        "Most travel tools end at 'here's your itinerary, good luck.' Auriva keeps going — check off activities as you do them, log what you actually spent, take notes. Everything saves locally and syncs the moment you have signal again.",
+        "Most travel tools end at 'here's your itinerary, good luck.' Auriva keeps going — check off activities as you do them, log what you actually spent, take notes. Everything saves locally and syncs the moment you have signal.",
     },
     {
       icon: <Database className="w-5 h-5" />,
       title: 'Structured memory, not chat history',
       description:
-        "Every trip is a typed Postgres row, not a fuzzy conversation log. After two completed trips, Auriva extracts your patterns — pace, budget tendency, top categories — and uses them as input next time. You can override anything it infers.",
+        "Every trip is a typed Postgres row, not a fuzzy conversation log. After two completed trips, Auriva extracts your patterns — pace, budget tendency, top categories — and uses them as input next time. Override anything it infers.",
     },
   ]
 
@@ -100,7 +101,9 @@ const HomePage = () => {
 
   return (
     <div className="bg-white">
-      {/* HERO */}
+      {/* ============================================================ */}
+      {/* HERO — bento-grid layout                                       */}
+      {/* ============================================================ */}
       <section className="hero-gradient relative overflow-hidden pt-16 md:pt-20">
         <div
           aria-hidden="true"
@@ -111,107 +114,130 @@ const HomePage = () => {
             backgroundSize: '48px 48px',
           }}
         />
-        <div className="container-custom relative py-20 md:py-28">
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white text-[11px] uppercase tracking-[0.18em] px-3 py-1.5 rounded-full mb-6 border border-white/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                Free · Open source · Built solo
+        <div
+          aria-hidden="true"
+          className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-400/10 rounded-full blur-3xl"
+        />
+
+        <div className="container-custom relative py-16 md:py-20">
+          {/* Top — headline */}
+          <div className="max-w-4xl mb-12">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white text-[11px] uppercase tracking-[0.18em] px-3 py-1.5 rounded-full mb-6 border border-white/20">
+              <Sparkles className="w-3.5 h-3.5" />
+              Free · Open source · Built solo
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.05]">
+              A travel planner you can actually use{' '}
+              <span className="text-amber-300">during the trip.</span>
+            </h1>
+            <p className="mt-5 text-lg md:text-xl text-primary-100 max-w-3xl leading-relaxed">
+              Auriva writes day-by-day itineraries grounded in the real forecast for your
+              destination — and stays useful after you land. Check off activities, log what you
+              spent, work offline. The next trip is sharper than the last.
+            </p>
+            <div className="mt-7 flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="hero"
+                size="lg"
+                icon={ArrowRight}
+                iconPosition="right"
+                onClick={() => navigate('/plan')}
+              >
+                Plan a trip
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="text-white border border-white/30 hover:bg-white/10 hover:text-white"
+                onClick={() => navigate('/discover')}
+              >
+                Browse destinations
+              </Button>
+            </div>
+          </div>
+
+          {/* Bento grid — six tiles, varied sizes */}
+          <div className="grid grid-cols-6 md:grid-cols-12 gap-3 md:gap-4">
+            {/* TILE 1 — Streaming demo, span 6 */}
+            <div className="col-span-6 md:col-span-6 row-span-2 bg-slate-900/85 backdrop-blur rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+                <span className="w-3 h-3 rounded-full bg-red-400/70" />
+                <span className="w-3 h-3 rounded-full bg-amber-400/70" />
+                <span className="w-3 h-3 rounded-full bg-emerald-400/70" />
+                <span className="ml-2 text-[11px] text-slate-400 font-mono">
+                  auriva · live response
+                </span>
               </div>
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.05]">
-                A travel planner you can actually use{' '}
-                <span className="text-amber-300">during the trip.</span>
-              </h1>
-
-              <p className="mt-6 text-lg md:text-xl text-primary-100 max-w-2xl leading-relaxed">
-                Auriva writes day-by-day itineraries grounded in the real forecast for your
-                destination — and stays useful after you land. Check off activities, log what
-                you actually spent, work offline. It remembers, so the next trip is sharper than
-                the last.
-              </p>
-
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Button
-                  variant="hero"
-                  size="lg"
-                  icon={ArrowRight}
-                  iconPosition="right"
-                  onClick={() => navigate('/plan')}
-                >
-                  Plan a trip
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  className="text-white border border-white/30 hover:bg-white/10 hover:text-white"
-                  onClick={() => navigate('/discover')}
-                >
-                  Browse destinations
-                </Button>
-              </div>
-
-              <div className="mt-10 text-primary-200 text-sm flex items-center gap-5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> No card required
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Try without signing up
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Trips saved when you log in
-                </span>
+              <div className="px-5 py-5 font-mono text-[12px] md:text-[13px] min-h-[260px] space-y-2">
+                {streamLines.slice(0, streamCount).map((line, idx) => (
+                  <div
+                    key={`${streamCount}-${idx}`}
+                    className={`flex items-start gap-2 ${
+                      line.startsWith('✓') ? 'text-emerald-400' : 'text-slate-200'
+                    }`}
+                    style={{
+                      animation: idx === streamCount - 1 ? 'streamLineIn 400ms ease-out' : 'none',
+                    }}
+                  >
+                    {line.startsWith('✓') ? (
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                    ) : (
+                      <span className="text-amber-400 flex-shrink-0">›</span>
+                    )}
+                    <span>{line}</span>
+                  </div>
+                ))}
+                {streamCount < streamLines.length && (
+                  <span className="inline-block w-2 h-4 bg-amber-400 align-middle animate-pulse" />
+                )}
               </div>
             </div>
 
-            <div className="lg:col-span-5">
-              <div className="relative">
-                <div
-                  aria-hidden="true"
-                  className="absolute -inset-2 bg-amber-400/10 rounded-3xl blur-2xl"
-                />
-                <div className="relative bg-slate-900/80 backdrop-blur rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
-                    <span className="w-3 h-3 rounded-full bg-red-400/70" />
-                    <span className="w-3 h-3 rounded-full bg-amber-400/70" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-400/70" />
-                    <span className="ml-2 text-[11px] text-slate-400 font-mono">
-                      auriva · live response
-                    </span>
-                  </div>
-                  <div className="px-5 py-5 font-mono text-[13px] min-h-[300px] space-y-2">
-                    {streamLines.slice(0, streamCount).map((line, idx) => (
-                      <div
-                        key={`${streamCount}-${idx}`}
-                        className={`flex items-start gap-2 ${
-                          line.startsWith('✓') ? 'text-emerald-400' : 'text-slate-200'
-                        }`}
-                        style={{
-                          animation: idx === streamCount - 1 ? 'streamLineIn 400ms ease-out' : 'none',
-                        }}
-                      >
-                        {line.startsWith('✓') ? (
-                          <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
-                        ) : (
-                          <span className="text-amber-400 flex-shrink-0">›</span>
-                        )}
-                        <span>{line}</span>
-                      </div>
-                    ))}
-                    {streamCount < streamLines.length && (
-                      <span className="inline-block w-2 h-4 bg-amber-400 align-middle animate-pulse" />
-                    )}
-                  </div>
-                </div>
+            {/* TILE 2 — Weather chip */}
+            <div className="col-span-3 md:col-span-3 bg-white/95 backdrop-blur rounded-2xl border border-white/20 p-5 flex flex-col justify-between min-h-[125px]">
+              <div className="flex items-center gap-2 text-sky-700">
+                <CloudRain className="w-5 h-5" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Day 3</span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">60%</p>
+                <p className="text-xs text-slate-500 mt-0.5">Rain expected · Tokyo</p>
+              </div>
+            </div>
 
-                <div className="hidden md:flex absolute -left-6 top-12 bg-white rounded-lg shadow-xl px-3 py-2 items-center gap-2 text-xs border border-slate-200">
-                  <CloudRain className="w-4 h-4 text-sky-600" />
-                  <span className="text-slate-700 font-medium">Rain on day 3</span>
-                </div>
-                <div className="hidden md:flex absolute -right-4 bottom-16 bg-white rounded-lg shadow-xl px-3 py-2 items-center gap-2 text-xs border border-slate-200">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span className="text-slate-700 font-medium">Under budget</span>
-                </div>
+            {/* TILE 3 — Under budget */}
+            <div className="col-span-3 md:col-span-3 bg-white/95 backdrop-blur rounded-2xl border border-white/20 p-5 flex flex-col justify-between min-h-[125px]">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <TrendingUp className="w-5 h-5" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Day total</span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">−$4</p>
+                <p className="text-xs text-slate-500 mt-0.5">Under estimate</p>
+              </div>
+            </div>
+
+            {/* TILE 4 — Offline badge */}
+            <div className="col-span-3 md:col-span-3 bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col justify-between min-h-[125px] text-white">
+              <div className="flex items-center gap-2 text-amber-300">
+                <WifiOff className="w-5 h-5" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Offline</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Open on the plane</p>
+                <p className="text-xs text-slate-400 mt-0.5">Service worker cached</p>
+              </div>
+            </div>
+
+            {/* TILE 5 — Profile insight */}
+            <div className="col-span-3 md:col-span-3 bg-white/95 backdrop-blur rounded-2xl border border-white/20 p-5 flex flex-col justify-between min-h-[125px]">
+              <div className="flex items-center gap-2 text-primary-700">
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Profile</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Cultural · Mid-budget</p>
+                <p className="text-xs text-slate-500 mt-0.5">From 4 completed trips</p>
               </div>
             </div>
           </div>
@@ -225,44 +251,54 @@ const HomePage = () => {
         `}</style>
       </section>
 
-      {/* WHAT MAKES THIS DIFFERENT */}
+      {/* ============================================================ */}
+      {/* CAPABILITIES                                                  */}
+      {/* ============================================================ */}
       <Section bg="white">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="max-w-3xl mb-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 mb-3">
             What makes this different
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Three capabilities, working together.
           </h2>
           <p className="mt-4 text-slate-600 text-lg leading-relaxed">
-            Any LLM can write you an itinerary. The harder problem is grounding it in real data,
-            keeping it useful after generation, and learning from what actually happened.
+            Any LLM can write you an itinerary. The harder problem is grounding the output in
+            real data, keeping it useful after generation, and learning from what actually
+            happened.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {capabilities.map((cap) => (
+        <div className="grid md:grid-cols-3 gap-5">
+          {capabilities.map((cap, idx) => (
             <div
               key={cap.title}
-              className="bg-white border border-slate-200 rounded-xl p-7 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              className="group relative bg-white border border-slate-200 rounded-2xl p-7 hover:shadow-xl hover:border-primary-200 hover:-translate-y-1 transition-all duration-300"
             >
-              <div className="w-11 h-11 bg-primary-50 text-primary-700 rounded-xl flex items-center justify-center mb-5 border border-primary-100">
-                {cap.icon}
+              <div className="absolute top-6 right-6 text-[60px] font-bold text-slate-100 leading-none select-none group-hover:text-primary-50 transition-colors">
+                0{idx + 1}
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-3">{cap.title}</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">{cap.description}</p>
+              <div className="relative">
+                <div className="w-11 h-11 bg-primary-50 text-primary-700 rounded-xl flex items-center justify-center mb-5 border border-primary-100">
+                  {cap.icon}
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-3">{cap.title}</h3>
+                <p className="text-slate-600 text-[15px] leading-relaxed">{cap.description}</p>
+              </div>
             </div>
           ))}
         </div>
       </Section>
 
-      {/* BEFORE / AFTER */}
+      {/* ============================================================ */}
+      {/* BEFORE / AFTER                                                */}
+      {/* ============================================================ */}
       <Section bg="slate">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 mb-3">
             Why grounding matters
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Same prompt. Different output.
           </h2>
           <p className="mt-4 text-slate-600 text-lg">
@@ -309,7 +345,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-primary-200 overflow-hidden relative">
+          <div className="bg-white rounded-2xl border-2 border-primary-300 overflow-hidden relative shadow-lg">
             <div className="absolute top-4 right-4 inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded">
               <Sparkles className="w-3 h-3" />
               Auriva
@@ -364,14 +400,16 @@ const HomePage = () => {
         </div>
       </Section>
 
-      {/* COMPANION MODE PREVIEW */}
+      {/* ============================================================ */}
+      {/* COMPANION MODE PREVIEW                                        */}
+      {/* ============================================================ */}
       <Section bg="white">
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 mb-3">
               Companion mode
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
               The trip continues after generation.
             </h2>
             <p className="mt-5 text-slate-600 text-lg leading-relaxed">
@@ -379,32 +417,31 @@ const HomePage = () => {
               museum cost more than expected. None of it needs signal.
             </p>
 
-            <ul className="mt-6 space-y-3 text-slate-700">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <span>Weather forecast on every day card</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <span>Actual-cost tracking with a USD/INR toggle</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <span>Service-worker backed — open trips work offline</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <span>Email a PDF, share with one tap</span>
-              </li>
+            <ul className="mt-7 space-y-3 text-slate-700">
+              {[
+                'Weather on every day card · refreshed live on today',
+                'Actual-cost tracking with INR/USD toggle',
+                'Service-worker backed · open trips work offline',
+                "'You're near this' badge with permission",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div className="lg:col-span-7">
             <div className="relative">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-primary-700">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-primary-700 inline-flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                      </span>
                       Day 3 · Today
                     </p>
                     <h3 className="text-xl font-bold text-slate-900 mt-1">Tokyo · Thursday</h3>
@@ -415,7 +452,7 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                <div className="px-6 py-5 space-y-4">
+                <div className="px-6 py-5 space-y-3">
                   <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
@@ -426,7 +463,7 @@ const HomePage = () => {
                         <span className="text-xs text-slate-500 flex-shrink-0">9:30 AM</span>
                       </div>
                       <p className="text-sm text-slate-600 mt-1 line-through opacity-60">
-                        Indoor immersive art — perfect rainy day swap
+                        Indoor immersive art — rainy-day swap
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-xs">
                         <span className="text-slate-500">Est. $32</span>
@@ -437,18 +474,21 @@ const HomePage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                    <Circle className="w-6 h-6 text-slate-300 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors border border-amber-200 bg-amber-50/40">
+                    <Circle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-3">
                         <h4 className="font-semibold text-slate-900">Lunch · Ichiran Ramen</h4>
                         <span className="text-xs text-slate-500 flex-shrink-0">12:30 PM</span>
                       </div>
                       <p className="text-sm text-slate-600 mt-1">
-                        Famous tonkotsu chain · solo dining booths
+                        Tonkotsu specialist · solo booths
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-xs">
                         <span className="text-slate-500">Est. $12</span>
+                        <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+                          <MapPin className="w-3 h-3" /> You're near this · 0.4 km
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -461,7 +501,7 @@ const HomePage = () => {
                         <span className="text-xs text-slate-500 flex-shrink-0">5:00 PM</span>
                       </div>
                       <p className="text-sm text-slate-600 mt-1">
-                        City views · forecast clears after the rain
+                        Forecast clears after the rain
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-xs">
                         <span className="text-slate-500">Est. $18</span>
@@ -485,13 +525,15 @@ const HomePage = () => {
         </div>
       </Section>
 
-      {/* DESTINATIONS */}
+      {/* ============================================================ */}
+      {/* DESTINATIONS                                                  */}
+      {/* ============================================================ */}
       <Section bg="slate">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 mb-3">
             Pick a destination
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Or start from your own idea.
           </h2>
         </div>
@@ -516,13 +558,23 @@ const HomePage = () => {
         </div>
       </Section>
 
-      {/* HONEST STATS */}
-      <section className="bg-slate-900 text-white py-16 md:py-20">
-        <div className="container-custom">
+      {/* ============================================================ */}
+      {/* HONEST STATS — dark band                                      */}
+      {/* ============================================================ */}
+      <section className="bg-slate-900 text-white py-16 md:py-20 relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="absolute -top-32 -right-32 w-96 h-96 bg-primary-700/20 rounded-full blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"
+        />
+        <div className="container-custom relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {honestStats.map((stat) => (
               <div key={stat.label} className="text-center md:text-left">
-                <div className="text-3xl md:text-4xl font-bold text-amber-400">{stat.value}</div>
+                <div className="text-4xl md:text-5xl font-bold text-amber-400">{stat.value}</div>
                 <div className="mt-2 text-white font-medium">{stat.label}</div>
                 <div className="text-sm text-slate-400 mt-0.5">{stat.sub}</div>
               </div>
@@ -531,13 +583,15 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* TECH STACK */}
+      {/* ============================================================ */}
+      {/* TECH STACK                                                    */}
+      {/* ============================================================ */}
       <Section bg="white">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 mb-3">
             Under the hood
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Built on tools that hold up in production.
           </h2>
           <p className="mt-3 text-slate-600">
@@ -548,7 +602,7 @@ const HomePage = () => {
           {techStack.map((tech) => (
             <div
               key={tech.name}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg hover:border-primary-300 hover:bg-white hover:shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg hover:border-primary-300 hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <span className="text-xs font-mono text-slate-400">{tech.category}</span>
               <span className="text-sm font-semibold text-slate-900">{tech.name}</span>
@@ -569,10 +623,12 @@ const HomePage = () => {
         </div>
       </Section>
 
-      {/* HOW IT WORKS */}
+      {/* ============================================================ */}
+      {/* HOW IT WORKS                                                  */}
+      {/* ============================================================ */}
       <Section bg="slate">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Three steps to a trip.
           </h2>
         </div>
@@ -596,13 +652,13 @@ const HomePage = () => {
               n: '03',
               title: 'Get your trip',
               description:
-                "A streaming day-by-day plan with real places, real prices, and weather-aware swaps. Save it, take it offline.",
+                "A streaming day-by-day plan with real places, real prices, and weather-aware swaps.",
               icon: <Zap className="w-5 h-5" />,
             },
           ].map((step) => (
-            <div key={step.n}>
+            <div key={step.n} className="group">
               <div className="flex items-baseline gap-3 mb-3">
-                <span className="text-5xl font-bold text-primary-200 leading-none">{step.n}</span>
+                <span className="text-6xl font-bold text-primary-200 leading-none group-hover:text-primary-300 transition-colors">{step.n}</span>
                 <span className="text-primary-700">{step.icon}</span>
               </div>
               <h3 className="text-xl font-bold text-slate-900">{step.title}</h3>
