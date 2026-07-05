@@ -93,7 +93,7 @@ const destinationsDatabase = [
     category: 'Indian',
     duration: '4-6 days',
     rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1512343879784-960f3d9f6e8a?w=800&h=500&fit=crop',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=500&fit=crop',
     highlight: 'Baga Beach, Dudhsagar Falls, Old Goa Churches',
     budget: 'budget',
     interests: ['Beaches', 'Nightlife', 'Water Sports'],

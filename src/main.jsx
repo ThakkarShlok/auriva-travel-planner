@@ -16,12 +16,34 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('VITE_CLERK_PUBLISHABLE_KEY is not set. Add it to .env.local.')
 }
 
-// Service worker — production only; dev uses Vite's HMR, not SW
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+const PWA_ENABLED = import.meta.env.VITE_ENABLE_PWA === 'true'
+
+// Service worker/PWA is opt-in. Vercel protected preview URLs can redirect
+// manifest fetches through SSO, which creates noisy CORS errors in DevTools.
+if (import.meta.env.PROD && PWA_ENABLED && 'serviceWorker' in navigator) {
+  const manifest = document.createElement('link')
+  manifest.rel = 'manifest'
+  manifest.href = '/manifest.webmanifest'
+  document.head.appendChild(manifest)
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('[SW] registration failed:', err.message)
     })
+  })
+} else if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch((err) => {
+        console.warn('[SW] cleanup failed:', err.message)
+      })
+
+    if ('caches' in window) {
+      caches.keys()
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+        .catch(() => {})
+    }
   })
 }
 
