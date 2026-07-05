@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveDatabaseUrl } from './db-url.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -20,19 +21,34 @@ try {
     const val = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
     if (key && !(key in process.env)) process.env[key] = val
   }
-} catch (e) { console.error('Cannot read .env.local:', e.message); process.exit(1) }
-
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL not set in .env.local'); process.exit(1)
+} catch (e) {
+  if (!process.env.DATABASE_URL_UNPOOLED && !process.env.DATABASE_URL) {
+    console.error('Cannot read .env.local:', e.message)
+    process.exit(1)
+  }
 }
+
+const databaseUrl = resolveDatabaseUrl()
 
 const { neon }    = await import('@neondatabase/serverless')
 const { drizzle } = await import('drizzle-orm/neon-http')
 const { sql }     = await import('drizzle-orm')
 
-const db = drizzle(neon(process.env.DATABASE_URL))
+const db = drizzle(neon(databaseUrl))
 
 const statements = [
+  `CREATE TABLE IF NOT EXISTS "users" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "clerk_id" text NOT NULL,
+    "email" text NOT NULL,
+    "first_name" text,
+    "last_name" text,
+    "image_url" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "users_clerk_id_unique" UNIQUE("clerk_id")
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "trips" (
     "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
     "user_id" uuid NOT NULL,
@@ -113,7 +129,7 @@ for (let i = 0; i < statements.length; i++) {
 
 console.log('\nVerifying tables…')
 const { neon: neon2 } = await import('@neondatabase/serverless')
-const verify = neon2(process.env.DATABASE_URL)
+const verify = neon2(databaseUrl)
 const rows = await verify`
   SELECT table_name FROM information_schema.tables
   WHERE table_schema = 'public' ORDER BY table_name`

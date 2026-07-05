@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveDatabaseUrl } from './db-url.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -19,10 +20,15 @@ try {
     const val = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
     if (key && !(key in process.env)) process.env[key] = val
   }
-} catch (e) { console.error('Cannot read .env.local:', e.message); process.exit(1) }
+} catch (e) {
+  if (!process.env.DATABASE_URL_UNPOOLED && !process.env.DATABASE_URL) {
+    console.error('Cannot read .env.local:', e.message)
+    process.exit(1)
+  }
+}
 
 const { neon } = await import('@neondatabase/serverless')
-const sql = neon(process.env.DATABASE_URL)
+const sql = neon(resolveDatabaseUrl())
 
 console.log('Running Phase 9 migration...\n')
 
