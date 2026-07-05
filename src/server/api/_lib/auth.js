@@ -1,5 +1,5 @@
 import { createPublicKey, createVerify } from 'node:crypto'
-import { db, users } from '../../src/db/index.js'
+import { db, users } from '../../../db/index.js'
 import { eq } from 'drizzle-orm'
 
 export class AuthError extends Error {

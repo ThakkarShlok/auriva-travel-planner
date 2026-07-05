@@ -1,5 +1,5 @@
 import { requireUser, AuthError } from '../_lib/auth.js'
-import { getTripById, updateTripWeatherRefreshedAt } from '../../src/db/queries/trips.js'
+import { getTripById, updateTripWeatherRefreshedAt } from '../../../db/queries/trips.js'
 import { geocodeDestination } from '../_lib/weather.js'
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'

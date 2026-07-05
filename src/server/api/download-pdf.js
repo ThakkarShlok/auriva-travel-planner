@@ -1,7 +1,7 @@
 import { requireUser, AuthError } from './_lib/auth.js'
-import { getTripWithDays, getPublicTripBySlug } from '../src/db/queries/trips.js'
+import { getTripWithDays, getPublicTripBySlug } from '../../db/queries/trips.js'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { TripPDFDocument } from '../src/pdf/TripPDFDocument.js'
+import { TripPDFDocument } from '../../pdf/TripPDFDocument.js'
 import React from 'react'
 
 export default async function handler(req, res) {

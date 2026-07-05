@@ -2,7 +2,7 @@
  * Local dev API server — run this instead of `vercel dev` on Windows.
  *
  * Usage:
- *   node api/serve-local.mjs
+ *   node src/server/api/serve-local.mjs
  *
  * Serves all /api/* functions on http://localhost:3001 so that `npm run dev`
  * (Vite) can proxy /api requests to it (see vite.config.js proxy setting).
@@ -17,7 +17,7 @@ const PORT = 3001
 
 // ── Load .env.local (simple line parser, no dependencies) ─────────────────
 async function loadEnv() {
-  const envPath = resolve(__dirname, '..', '.env.local')
+  const envPath = resolve(__dirname, '..', '..', '..', '.env.local')
   try {
     const text = await readFile(envPath, 'utf8')
     for (const line of text.split('\n')) {

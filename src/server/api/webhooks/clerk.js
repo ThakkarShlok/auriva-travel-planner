@@ -1,5 +1,5 @@
 import { Webhook } from 'svix'
-import { db, users } from '../../src/db/index.js'
+import { db, users } from '../../../db/index.js'
 import { eq } from 'drizzle-orm'
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET

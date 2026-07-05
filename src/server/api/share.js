@@ -1,5 +1,5 @@
 import { requireUser, AuthError } from './_lib/auth.js'
-import { shareTrip, unshareTrip } from '../src/db/queries/trips.js'
+import { shareTrip, unshareTrip } from '../../db/queries/trips.js'
 
 export default async function handler(req, res) {
   try {

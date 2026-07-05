@@ -92,7 +92,7 @@ function apiPlugin() {
 
       for (const { route, file } of apiRoutes) {
         try {
-          const mod = await import(pathToFileURL(resolve(__dirname, `api/${file}.js`)).href)
+          const mod = await import(pathToFileURL(resolve(__dirname, `src/server/api/${file}.js`)).href)
           const routePath = `/api/${route}`
           if (route.includes(':')) {
             // Dynamic route — build a regex from :param segments

@@ -1,5 +1,5 @@
 import { requireUser, AuthError } from '../_lib/auth.js'
-import { duplicateTrip } from '../../src/db/queries/trips.js'
+import { duplicateTrip } from '../../../db/queries/trips.js'
 
 export default async function handler(req, res) {
   try {

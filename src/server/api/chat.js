@@ -1,5 +1,5 @@
 import { callGroq, GroqError, assertGroqKey } from './_lib/groq.js'
-import { logGeneration } from '../src/db/queries/generationLogs.js'
+import { logGeneration } from '../../db/queries/generationLogs.js'
 
 const MODEL = 'llama-3.1-8b-instant'
 const SYSTEM_PROMPT = `You are Auriva, a helpful AI travel assistant. Give concise, accurate, practical travel advice. Recommend real places, real hotels, and real services. If you're uncertain about something, say so rather than guessing.`

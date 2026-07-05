@@ -1,5 +1,5 @@
 import { requireUser, AuthError } from '../_lib/auth.js'
-import { getConversationForTrip } from '../../src/db/queries/conversations.js'
+import { getConversationForTrip } from '../../../db/queries/conversations.js'
 
 export default async function handler(req, res) {
   try {

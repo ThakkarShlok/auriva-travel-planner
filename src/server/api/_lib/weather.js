@@ -1,4 +1,4 @@
-import { getCachedWeather, upsertWeather } from '../../src/db/queries/weather.js'
+import { getCachedWeather, upsertWeather } from '../../../db/queries/weather.js'
 
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'

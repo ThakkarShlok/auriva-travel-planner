@@ -1,4 +1,4 @@
-import { db, users } from '../src/db/index.js'
+import { db, users } from '../../db/index.js'
 import { eq } from 'drizzle-orm'
 
 export default async function handler(req, res) {

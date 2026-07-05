@@ -1,4 +1,4 @@
-import { getPublicTripBySlug } from '../src/db/queries/trips.js'
+import { getPublicTripBySlug } from '../../db/queries/trips.js'
 
 export default async function handler(req, res) {
   try {

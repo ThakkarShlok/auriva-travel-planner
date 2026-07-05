@@ -1,9 +1,9 @@
 import { callGroq } from './_lib/groq.js'
 import { requireUser, AuthError } from './_lib/auth.js'
-import { getTripWithDays, updateTripDays, updateTripMetadata } from '../src/db/queries/trips.js'
-import { appendMessage } from '../src/db/queries/conversations.js'
+import { getTripWithDays, updateTripDays, updateTripMetadata } from '../../db/queries/trips.js'
+import { appendMessage } from '../../db/queries/conversations.js'
 import { buildWeatherPromptContext } from './_lib/weather.js'
-import { logGeneration } from '../src/db/queries/generationLogs.js'
+import { logGeneration } from '../../db/queries/generationLogs.js'
 
 const MODEL = 'llama-3.3-70b-versatile'
 

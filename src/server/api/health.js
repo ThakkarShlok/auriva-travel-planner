@@ -1,5 +1,5 @@
 import { assertGroqKey } from './_lib/groq.js'
-import { db } from '../src/db/index.js'
+import { db } from '../../db/index.js'
 import { sql } from 'drizzle-orm'
 
 export default async function handler(req, res) {

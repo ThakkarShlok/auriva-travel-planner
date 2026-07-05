@@ -4,7 +4,7 @@ import {
   getMetricsSummary,
   getDailyVolume,
   getEndpointBreakdown,
-} from '../../src/db/queries/generationLogs.js'
+} from '../../../db/queries/generationLogs.js'
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean)
 

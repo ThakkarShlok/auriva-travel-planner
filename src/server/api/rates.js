@@ -1,4 +1,4 @@
-import { getCachedRate, upsertRate } from '../src/db/queries/rates.js'
+import { getCachedRate, upsertRate } from '../../db/queries/rates.js'
 
 const RATE_API = 'https://open.er-api.com/v6/latest/USD'
 

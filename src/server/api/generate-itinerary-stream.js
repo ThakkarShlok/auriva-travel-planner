@@ -1,6 +1,6 @@
 import { assertGroqKey } from './_lib/groq.js'
 import { getWeatherForDestination, buildWeatherPromptContext } from './_lib/weather.js'
-import { logGeneration } from '../src/db/queries/generationLogs.js'
+import { logGeneration } from '../../db/queries/generationLogs.js'
 
 const MODEL = 'llama-3.3-70b-versatile'
 
