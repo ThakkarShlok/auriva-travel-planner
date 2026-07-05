@@ -1,5 +1,5 @@
 import { assertGroqKey } from './_lib/groq.js'
-import { db } from '../../db/index.js'
+import { db, getDatabaseUrlSource } from '../../db/index.js'
 import { sql } from 'drizzle-orm'
 
 export default async function handler(req, res) {
@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     const checks = {
       groqKey: 'unknown',
       databaseUrl: 'unknown',
+      databaseUrlSource: 'unknown',
       clerkSecret: 'unknown',
       databaseConnection: 'unknown',
     }
@@ -18,7 +19,9 @@ export default async function handler(req, res) {
     try { assertGroqKey(); checks.groqKey = 'present' }
     catch { checks.groqKey = 'missing or malformed' }
 
-    checks.databaseUrl = process.env.DATABASE_URL ? 'present' : 'missing'
+    const databaseUrlSource = getDatabaseUrlSource()
+    checks.databaseUrl = databaseUrlSource ? 'present' : 'missing'
+    checks.databaseUrlSource = databaseUrlSource ?? 'none'
     checks.clerkSecret = process.env.CLERK_SECRET_KEY ? 'present' : 'missing'
 
     try {
