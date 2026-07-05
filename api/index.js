@@ -57,7 +57,7 @@ function getRoutePath(req) {
   }
 
   const url = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`)
-  return url.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '')
+  return url.pathname.replace(/^\/api\/?/, '').replace(/^\/+|\/+$/g, '')
 }
 
 export default async function handler(req, res) {
