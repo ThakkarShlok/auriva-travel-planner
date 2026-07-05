@@ -3,7 +3,7 @@ import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout/Layout'
 import PrivateRoute from './routes/PrivateRoute'
-import Loader from './components/ui/Loader'
+import Loader from './components/UI/Loader'
 import ClerkSyncBridge from './components/ClerkSyncBridge'
 
 // Lazy load pages
