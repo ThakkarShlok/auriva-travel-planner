@@ -26,22 +26,6 @@ function walk(dir, files = []) {
   return files
 }
 
-let mode = 'git HEAD'
-let treeFiles
-try {
-  treeFiles = git(['ls-tree', '-r', 'HEAD', '--name-only'])
-    .split(/\r?\n/)
-    .filter(Boolean)
-} catch {
-  mode = 'filesystem'
-  treeFiles = [...walk('src'), ...walk('api')]
-}
-
-const fileSet = new Set(treeFiles)
-const sourceFiles = treeFiles.filter((file) =>
-  /^(src|api)\//.test(file) && exts.includes(extname(file)),
-)
-
 const importRegexes = [
   /\bimport\s+(?:[^'"]*?\s+from\s+)?['"](\.{1,2}\/[^'"]+)['"]/g,
   /\bexport\s+[^'"]*?\s+from\s+['"](\.{1,2}\/[^'"]+)['"]/g,
@@ -68,70 +52,106 @@ function candidates(importer, specifier) {
   ]
 }
 
-function resolveCaseInsensitive(candidate) {
-  const lower = candidate.toLowerCase()
-  const matches = treeFiles.filter((file) => file.toLowerCase() === lower)
-  return matches
-}
+function runAudit({ mode, treeFiles, readSource }) {
+  const fileSet = new Set(treeFiles)
+  const sourceFiles = treeFiles.filter((file) =>
+    /^(src|api)\//.test(file) && exts.includes(extname(file)),
+  )
 
-const missing = []
-const casing = []
+  function resolveCaseInsensitive(candidate) {
+    const lower = candidate.toLowerCase()
+    return treeFiles.filter((file) => file.toLowerCase() === lower)
+  }
 
-for (const importer of sourceFiles) {
-  const text = mode === 'git HEAD' ? git(['show', `HEAD:${importer}`]) : readFileSync(importer, 'utf8')
+  const missing = []
+  const casing = []
 
-  for (const regex of importRegexes) {
-    regex.lastIndex = 0
-    let match
-    while ((match = regex.exec(text))) {
-      const specifier = match[1]
-      const line = lineNumberForOffset(text, match.index)
-      const possible = candidates(importer, specifier)
+  for (const importer of sourceFiles) {
+    const text = readSource(importer)
 
-      const exact = possible.find((candidate) => fileSet.has(candidate))
-      if (exact) continue
+    for (const regex of importRegexes) {
+      regex.lastIndex = 0
+      let match
+      while ((match = regex.exec(text))) {
+        const specifier = match[1]
+        const line = lineNumberForOffset(text, match.index)
+        const possible = candidates(importer, specifier)
 
-      const insensitiveMatches = possible.flatMap((candidate) =>
-        resolveCaseInsensitive(candidate).map((actual) => ({ expected: candidate, actual })),
-      )
+        const exact = possible.find((candidate) => fileSet.has(candidate))
+        if (exact) continue
 
-      if (insensitiveMatches.length > 0) {
-        casing.push({ importer, line, specifier, matches: insensitiveMatches })
-      } else {
-        missing.push({ importer, line, specifier, tried: possible })
+        const insensitiveMatches = possible.flatMap((candidate) =>
+          resolveCaseInsensitive(candidate).map((actual) => ({ expected: candidate, actual })),
+        )
+
+        if (insensitiveMatches.length > 0) {
+          casing.push({ importer, line, specifier, matches: insensitiveMatches })
+        } else {
+          missing.push({ importer, line, specifier, tried: possible })
+        }
       }
     }
   }
+
+  return { mode, sourceFiles, casing, missing }
 }
 
-console.log('CASE-SENSITIVE IMPORT AUDIT AGAINST GIT HEAD')
-console.log('============================================')
-console.log(`Mode: ${mode}`)
-console.log(`Source files checked: ${sourceFiles.length}`)
-console.log(`Casing mismatches: ${casing.length}`)
-console.log(`Missing imports: ${missing.length}`)
+function printReport(result) {
+  console.log(`Mode: ${result.mode}`)
+  console.log(`Source files checked: ${result.sourceFiles.length}`)
+  console.log(`Casing mismatches: ${result.casing.length}`)
+  console.log(`Missing imports: ${result.missing.length}`)
 
-if (casing.length > 0) {
-  console.log('\nCASING MISMATCHES')
-  casing.forEach((item, idx) => {
-    console.log(`${idx + 1}. ${item.importer}:${item.line}`)
-    console.log(`   import: ${item.specifier}`)
-    for (const match of item.matches) {
-      console.log(`   expected: ${match.expected}`)
-      console.log(`   actual:   ${match.actual}`)
-    }
+  if (result.casing.length > 0) {
+    console.log('\nCASING MISMATCHES')
+    result.casing.forEach((item, idx) => {
+      console.log(`${idx + 1}. ${item.importer}:${item.line}`)
+      console.log(`   import: ${item.specifier}`)
+      for (const match of item.matches) {
+        console.log(`   expected: ${match.expected}`)
+        console.log(`   actual:   ${match.actual}`)
+      }
+    })
+  }
+
+  if (result.missing.length > 0) {
+    console.log('\nMISSING IMPORTS')
+    result.missing.forEach((item, idx) => {
+      console.log(`${idx + 1}. ${item.importer}:${item.line}`)
+      console.log(`   import: ${item.specifier}`)
+      console.log(`   tried: ${item.tried.join(', ')}`)
+    })
+  }
+}
+
+const filesystemResult = runAudit({
+  mode: 'filesystem',
+  treeFiles: [...walk('src'), ...walk('api')],
+  readSource: (file) => readFileSync(file, 'utf8'),
+})
+
+let gitResult = null
+try {
+  gitResult = runAudit({
+    mode: 'git HEAD',
+    treeFiles: git(['ls-tree', '-r', 'HEAD', '--name-only']).split(/\r?\n/).filter(Boolean),
+    readSource: (file) => git(['show', `HEAD:${file}`]),
   })
+} catch {}
+
+console.log('CASE-SENSITIVE IMPORT AUDIT')
+console.log('===========================')
+printReport(filesystemResult)
+if (gitResult) {
+  console.log('')
+  printReport(gitResult)
 }
 
-if (missing.length > 0) {
-  console.log('\nMISSING IMPORTS')
-  missing.forEach((item, idx) => {
-    console.log(`${idx + 1}. ${item.importer}:${item.line}`)
-    console.log(`   import: ${item.specifier}`)
-    console.log(`   tried: ${item.tried.join(', ')}`)
-  })
-}
-
-if (casing.length > 0 || missing.length > 0) {
+if (
+  filesystemResult.casing.length > 0 ||
+  filesystemResult.missing.length > 0 ||
+  gitResult?.casing.length > 0 ||
+  gitResult?.missing.length > 0
+) {
   process.exitCode = 1
 }
