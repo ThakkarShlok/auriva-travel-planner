@@ -1,0 +1,32 @@
+<svg width="360" height="96" viewBox="0 0 360 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Auriva">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4338ca"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#818cf8" stop-opacity="0.9"/>
+      <stop offset="65%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef9ec" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fef9ec" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g>
+    <rect x="0" y="0" width="96" height="96" rx="22" fill="url(#bg)"/>
+    <circle cx="71" cy="22" r="13" fill="url(#glow)"/>
+    <path d="M 18 79
+             C 24 71, 34 60, 43 50
+             C 54 40, 63 31, 70 25
+             C 69 29, 64 36, 56 45
+             C 47 55, 36 69, 26 80
+             Z" fill="url(#trail)"/>
+    <circle cx="71" cy="22" r="5" fill="#fef9ec"/>
+  </g>
+
+  <text x="114" y="62" font-family="Inter, 'Segoe UI', -apple-system, sans-serif" font-weight="700" font-size="42" fill="#1e1b4b" letter-spacing="-0.5">Auriva</text>
+</svg>
