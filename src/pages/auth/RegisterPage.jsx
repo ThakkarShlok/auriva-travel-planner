@@ -1,6 +1,6 @@
 import React from 'react'
 import { SignUp } from '@clerk/clerk-react'
-import AuthLayout from '../../components/UI/AuthLayout'
+import AuthLayout from '../../components/ui/AuthLayout'
 import usePageTitle from '../../hooks/usePageTitle'
 
 const RegisterPage = () => {

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Compass } from 'lucide-react'
-import Button from '../components/UI/Button'
+import Button from '../components/ui/Button'
 import usePageTitle from '../hooks/usePageTitle'
 
 const NotFoundPage = () => {

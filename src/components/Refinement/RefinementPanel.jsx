@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { Sparkles, Send, X } from 'lucide-react'
 import { refineTrip, getConversation } from '../../services/tripsService'
-import Card from '../UI/Card'
+import Card from '../ui/Card'
 
 const QUICK_ACTIONS = [
   'Less hectic days',

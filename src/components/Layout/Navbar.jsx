@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { Compass, Calendar, LayoutDashboard, Menu, X, Sparkles, Info, Mail, Globe } from 'lucide-react'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import aurivaLogo from '../../assets/auriva-wordmark.svg'
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -34,14 +35,8 @@ const Navbar = () => {
       <div className="container-custom">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-primary-800 rounded-xl flex items-center justify-center group-hover:scale-105 transition">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl text-gray-800 tracking-tight">Auriva</span>
-              <span className="text-[10px] text-gray-400 tracking-wider -mt-1">AI TRAVEL</span>
-            </div>
+          <Link to="/" className="flex items-center group">
+            <img src={aurivaLogo} alt="Auriva" className="h-8 md:h-9 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
