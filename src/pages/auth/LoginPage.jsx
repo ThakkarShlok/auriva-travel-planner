@@ -1,6 +1,6 @@
 import React from 'react'
 import { SignIn } from '@clerk/clerk-react'
-import AuthLayout from '../../components/ui/AuthLayout'
+import AuthLayout from '../../components/UI/AuthLayout'
 import usePageTitle from '../../hooks/usePageTitle'
 
 const LoginPage = () => {

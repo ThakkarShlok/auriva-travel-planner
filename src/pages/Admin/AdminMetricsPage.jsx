@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useAuth, useUser } from '@clerk/clerk-react'
 import { Navigate } from 'react-router-dom'
 import { Activity, AlertCircle, Clock, Zap } from 'lucide-react'
-import PageHeader from '../../components/ui/PageHeader'
-import Card from '../../components/ui/Card'
-import Loader from '../../components/ui/Loader'
+import PageHeader from '../../components/UI/PageHeader'
+import Card from '../../components/UI/Card'
+import Loader from '../../components/UI/Loader'
 import usePageTitle from '../../hooks/usePageTitle'
 
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean)

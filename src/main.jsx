@@ -16,10 +16,10 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('VITE_CLERK_PUBLISHABLE_KEY is not set. Add it to .env.local.')
 }
 
-const PWA_ENABLED = import.meta.env.VITE_ENABLE_PWA === 'true'
+const PWA_ENABLED = import.meta.env.VITE_ENABLE_PWA !== 'false'
 
-// Service worker/PWA is opt-in. Vercel protected preview URLs can redirect
-// manifest fetches through SSO, which creates noisy CORS errors in DevTools.
+// Service worker/PWA is enabled in production by default. Vercel protected preview
+// URLs can still redirect manifest fetches through SSO, which creates noisy CORS errors.
 if (import.meta.env.PROD && PWA_ENABLED && 'serviceWorker' in navigator) {
   const manifest = document.createElement('link')
   manifest.rel = 'manifest'

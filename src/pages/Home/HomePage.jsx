@@ -10,10 +10,10 @@ import {
   MapPin, Calendar, BarChart3, Code2
 } from 'lucide-react'
 import destinationsDatabase from '../../constants/destinations'
-import Button from '../../components/ui/Button'
-import Section from '../../components/ui/Section'
-import GradientCTA from '../../components/ui/GradientCTA'
-import DestinationCard from '../../components/cards/DestinationCard'
+import Button from '../../components/UI/Button'
+import Section from '../../components/UI/Section'
+import GradientCTA from '../../components/UI/GradientCTA'
+import DestinationCard from '../../components/Cards/DestinationCard'
 
 const HomePage = () => {
   usePageTitle(null)

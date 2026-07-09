@@ -1,22 +1,22 @@
 // src/App.jsx
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Layout from './components/layout/Layout'
+import Layout from './components/Layout/Layout'
 import PrivateRoute from './routes/PrivateRoute'
-import Loader from './components/ui/Loader'
+import Loader from './components/UI/Loader'
 import ClerkSyncBridge from './components/ClerkSyncBridge'
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/Home/HomePage'))
-const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'))
-const PlannerPage = lazy(() => import('./pages/planner/PlannerPage'))
-const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'))
+const OnboardingPage = lazy(() => import('./pages/Onboarding/OnboardingPage'))
+const PlannerPage = lazy(() => import('./pages/Planner/PlannerPage'))
+const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'))
 const ItineraryDetailPage = lazy(() => import('./pages/ItineraryDetail/ItineraryDetailPage'))
 const AboutPage = lazy(() => import('./pages/About/AboutPage'))
 const ContactPage = lazy(() => import('./pages/Contact/ContactPage'))
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
-const DiscoverPage = lazy(() => import('./pages/discover/DiscoverPage'))
+const DiscoverPage = lazy(() => import('./pages/Discover/DiscoverPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const PublicTripPage = lazy(() => import('./pages/PublicTrip/PublicTripPage'))
 const AdminMetricsPage = lazy(() => import('./pages/Admin/AdminMetricsPage'))

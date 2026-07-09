@@ -5,9 +5,9 @@ import { updateOnboarding } from '../../store/slices/tripSlice'
 import { MapPin, Calendar, ArrowRight, Minus, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import usePageTitle from '../../hooks/usePageTitle'
-import PageHeader from '../../components/ui/PageHeader'
-import Card from '../../components/ui/Card'
-import Button from '../../components/ui/Button'
+import PageHeader from '../../components/UI/PageHeader'
+import Card from '../../components/UI/Card'
+import Button from '../../components/UI/Button'
 
 const INTEREST_CHIPS = ['Culture', 'Food', 'Adventure', 'Nature', 'Relaxation', 'Nightlife', 'Family-friendly', 'Photography']
 

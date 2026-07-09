@@ -1,7 +1,7 @@
 import React from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { Navigate, useLocation } from 'react-router-dom'
-import Loader from '../components/ui/Loader'
+import Loader from '../components/UI/Loader'
 
 const PrivateRoute = ({ children }) => {
   const { isLoaded, isSignedIn } = useAuth()

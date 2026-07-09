@@ -13,8 +13,8 @@ import {
   copyToClipboard,
 } from '../../utils/share'
 import toast from 'react-hot-toast'
-import Card from '../ui/Card'
-import Button from '../ui/Button'
+import Card from '../UI/Card'
+import Button from '../UI/Button'
 
 const SOCIAL_BUTTONS = [
   {
@@ -311,3 +311,4 @@ const ShareModal = ({ isOpen, onClose, tripId, currentSlug, onShareChange, trip 
 }
 
 export default ShareModal
+

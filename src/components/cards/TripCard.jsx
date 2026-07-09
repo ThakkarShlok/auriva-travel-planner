@@ -1,6 +1,6 @@
 import React from 'react'
 import { Calendar, Users, DollarSign, Eye, Trash2, Copy } from 'lucide-react'
-import Button from '../ui/Button'
+import Button from '../UI/Button'
 
 const GRADIENT_COLORS = [
   'from-primary-700 to-primary-900',
@@ -81,3 +81,4 @@ const TripCard = ({ trip, image, onView, onDelete, onDuplicate }) => {
 }
 
 export default TripCard
+

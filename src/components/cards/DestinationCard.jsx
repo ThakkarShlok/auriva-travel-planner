@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock, Star } from 'lucide-react';
-import Badge from '../ui/Badge';
+import Badge from '../UI/Badge';
 
 const DestinationCard = ({ title, subtitle, category, duration, rating = 4.5, image, onClick }) => {
   return (
@@ -46,3 +46,4 @@ const DestinationCard = ({ title, subtitle, category, duration, rating = 4.5, im
 };
 
 export default DestinationCard;
+
