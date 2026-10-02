@@ -82,17 +82,17 @@ const ItineraryDetailPage = () => {
           ...day,
           id: prevDay?.id,
           dayNumber: dayIdx + 1,
-          // Merge per-activity: Groq never returns companion fields or coords,
+          // Merge per-activity: Gemini never returns companion fields or coords,
           // so fall back to the previous activity at the same index.
           activities: (day.activities ?? []).map((act, actIdx) => {
             const prevAct = prevDay?.activities?.[actIdx]
             return {
               ...act,
-              // Coordinates: prefer what Groq returned (may have updated a new activity),
+              // Coordinates: prefer what Gemini returned (may have updated a new activity),
               // fall back to what was already stored for unchanged activities.
               lat: act.lat ?? prevAct?.lat ?? null,
               lng: act.lng ?? prevAct?.lng ?? null,
-              // Companion fields: always preserve — Groq never touches these.
+              // Companion fields: always preserve — Gemini never touches these.
               ...(prevAct?.checked !== undefined && { checked: prevAct.checked }),
               ...(prevAct?.notes !== undefined && { notes: prevAct.notes }),
               ...(prevAct?.actualCost !== undefined && { actualCost: prevAct.actualCost }),

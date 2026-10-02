@@ -5,10 +5,10 @@ import { pgTable, text, timestamp, jsonb, integer, real, uuid, index, date } fro
  * @property {string} time        - HH:MM
  * @property {string} title
  * @property {string} description
- * @property {number} cost        - Estimated cost in USD (from Groq, never changed)
+ * @property {number} cost        - Estimated cost in USD (from Gemini, never changed)
  * @property {string} [category]
- * @property {number} [lat]              - Phase 11a: approximate latitude (from Groq)
- * @property {number} [lng]              - Phase 11a: approximate longitude (from Groq)
+ * @property {number} [lat]              - Phase 11a: approximate latitude (from Gemini)
+ * @property {number} [lng]              - Phase 11a: approximate longitude (from Gemini)
  * @property {boolean} [checked]         - Phase 9: did the user do this activity?
  * @property {string}  [notes]           - Phase 9: user's personal notes
  * @property {number}  [actualCost]      - Phase 9: what the user actually spent (USD)
@@ -106,7 +106,7 @@ export const exchangeRates = pgTable('exchange_rates', {
   baseTargetIdx: index('exchange_rates_pair_idx').on(table.baseCurrency, table.targetCurrency),
 }))
 
-// Generation observability — one row per Groq call
+// Generation observability — one row per Gemini call
 export const generationLogs = pgTable('generation_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),  // nullable for anonymous calls

@@ -58,7 +58,7 @@ const HomePage = () => {
 
   const honestStats = [
     { value: `${destinationsDatabase.length}`, label: 'Curated destinations', sub: 'Hand-picked, browsable' },
-    { value: '~8s', label: 'Median generation', sub: 'Streaming via Groq' },
+    { value: '~8s', label: 'Median generation', sub: 'Streaming via Gemini' },
     { value: '14-day', label: 'Weather lookahead', sub: 'Cached server-side' },
     { value: '0', label: 'Subscription tiers', sub: 'Free, today and later' },
   ]
@@ -89,7 +89,7 @@ const HomePage = () => {
     { name: 'Vite', category: 'Build' },
     { name: 'Tailwind CSS', category: 'Styling' },
     { name: 'Redux Toolkit', category: 'State' },
-    { name: 'Groq + Llama 3.3', category: 'AI' },
+    { name: 'Google Gemini', category: 'AI' },
     { name: 'Neon Postgres', category: 'Database' },
     { name: 'Drizzle ORM', category: 'ORM' },
     { name: 'Clerk', category: 'Auth' },

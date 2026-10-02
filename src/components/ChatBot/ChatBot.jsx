@@ -132,7 +132,7 @@ const ChatBot = () => {
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-gray-400 text-center mt-2">Powered by Groq AI • For demo purposes only</p>
+            <p className="text-xs text-gray-400 text-center mt-2">Powered by Gemini AI • For demo purposes only</p>
           </div>
         </>
       )}

@@ -55,7 +55,7 @@ const ContactPage = () => {
   ]
 
   const faqs = [
-    { question: 'How does Auriva generate itineraries?', answer: 'Auriva uses advanced AI (Groq API) to analyze your preferences, budget, and travel style to create personalized day-by-day itineraries.' },
+    { question: 'How does Auriva generate itineraries?', answer: 'Auriva uses Google Gemini to analyze your preferences, budget, and travel style to create personalized day-by-day itineraries.' },
     { question: 'Is Auriva free to use?', answer: "Yes! Auriva is completely free to use. We're committed to providing value before introducing any premium features." },
     { question: 'Can I save and edit my itineraries?', answer: 'Absolutely! You can save, edit, duplicate, and delete your itineraries from your dashboard.' },
     { question: 'Do you offer customer support?', answer: 'Yes! We provide 24/7 AI-powered chat support and email support within 24 hours.' },

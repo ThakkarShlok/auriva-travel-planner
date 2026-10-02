@@ -36,10 +36,10 @@ const AboutPage = () => {
         'Grounding the LLM in live weather, currency, and geocoding — with deterministic fallbacks and full call observability.',
       bullets: [
         'Server-side weather fetch via Open-Meteo with 6-hour Postgres cache',
-        'Forecast injected into the Groq system prompt so generation reflects real conditions',
+        'Forecast injected into the Gemini system prompt so generation reflects real conditions',
         'OpenStreetMap Nominatim as fallback geocoder for ambiguous destinations',
         'Currency layer: LLM locked to USD, client converts at view time via cached FX rates',
-        'Every Groq call logged with latency, tokens, status, and context flags',
+        'Every Gemini call logged with latency, tokens, status, and context flags',
       ],
       footer: '14-day forecast · 6-hour cache · ~400ms median round-trip',
     },
@@ -67,7 +67,7 @@ const AboutPage = () => {
       bullets: [
         'Hybrid completion detection — auto-detect plus manual override',
         'Deterministic analytics: averages, category counts, top destinations',
-        'Groq qualitative extraction: travel style, pace, budget archetype',
+        'Gemini qualitative extraction: travel style, pace, budget archetype',
         'User overrides take priority over AI inference, persisted as JSONB',
         'Preferences injected into future generation prompts as grounded context',
       ],
