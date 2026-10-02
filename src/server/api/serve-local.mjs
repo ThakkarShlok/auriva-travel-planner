@@ -17,21 +17,29 @@ const PORT = 3001
 
 // ── Load .env.local (simple line parser, no dependencies) ─────────────────
 async function loadEnv() {
-  const envPath = resolve(__dirname, '..', '..', '..', '.env.local')
-  try {
-    const text = await readFile(envPath, 'utf8')
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) continue
-      const idx = trimmed.indexOf('=')
-      if (idx === -1) continue
-      const key = trimmed.slice(0, idx).trim()
-      const val = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
-      if (key && !(key in process.env)) process.env[key] = val
-    }
-    console.log('[api-server] loaded .env.local')
-  } catch {
-    console.log('[api-server] no .env.local found, using existing env')
+  const values = new Map()
+  for (const filename of ['.env.local', '.env']) {
+    const envPath = resolve(__dirname, '..', '..', '..', filename)
+    try {
+      const text = await readFile(envPath, 'utf8')
+      for (const line of text.split('\n')) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith('#')) continue
+        const idx = trimmed.indexOf('=')
+        if (idx === -1) continue
+        const key = trimmed.slice(0, idx).trim()
+        const val = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
+        if (key && !values.has(key)) values.set(key, val)
+      }
+    } catch {}
+  }
+  for (const [key, val] of values) {
+    if (!(key in process.env)) process.env[key] = val
+  }
+  if (values.size > 0) {
+    console.log('[api-server] loaded local environment files')
+  } else {
+    console.log('[api-server] no local env files found, using existing env')
   }
 }
 
