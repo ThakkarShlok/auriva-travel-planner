@@ -160,6 +160,9 @@ Include ${days} days of activities with specific real place names.`
       latencyMs: Date.now() - startTime,
       contextEnrichments: { weather: !!weatherData, weatherCached: weatherData?.cached ?? null, currency: 'USD' },
     })
+    if (!res.headersSent) {
+      return res.status(error?.status || 500).json({ error: error?.message || 'Unknown error', code: error?.code || 'StreamError' })
+    }
     try {
       res.write(`event: error\ndata: ${JSON.stringify({ error: error?.message || 'Unknown error' })}\n\n`)
       res.end()

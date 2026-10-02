@@ -1,20 +1,20 @@
-import health from '../src/server/api/health.js'
-import generateItinerary from '../src/server/api/generate-itinerary.js'
-import generateItineraryStream from '../src/server/api/generate-itinerary-stream.js'
-import refineItinerary from '../src/server/api/refine-itinerary.js'
-import chat from '../src/server/api/chat.js'
-import clerkWebhook from '../src/server/api/webhooks/clerk.js'
-import syncUser from '../src/server/api/sync-user.js'
-import tripsIndex from '../src/server/api/trips/index.js'
-import tripsDuplicate from '../src/server/api/trips/duplicate.js'
-import tripsById from '../src/server/api/trips/[id].js'
-import conversationsByTripId from '../src/server/api/conversations/[tripId].js'
-import share from '../src/server/api/share.js'
-import publicTrip from '../src/server/api/public-trip.js'
-import downloadPdf from '../src/server/api/download-pdf.js'
-import rates from '../src/server/api/rates.js'
-import adminMetrics from '../src/server/api/admin/metrics.js'
-import weatherRefresh from '../src/server/api/weather/refresh.js'
+const health = () => import('../src/server/api/health.js')
+const generateItinerary = () => import('../src/server/api/generate-itinerary.js')
+const generateItineraryStream = () => import('../src/server/api/generate-itinerary-stream.js')
+const refineItinerary = () => import('../src/server/api/refine-itinerary.js')
+const chat = () => import('../src/server/api/chat.js')
+const clerkWebhook = () => import('../src/server/api/webhooks/clerk.js')
+const syncUser = () => import('../src/server/api/sync-user.js')
+const tripsIndex = () => import('../src/server/api/trips/index.js')
+const tripsDuplicate = () => import('../src/server/api/trips/duplicate.js')
+const tripsById = () => import('../src/server/api/trips/[id].js')
+const conversationsByTripId = () => import('../src/server/api/conversations/[tripId].js')
+const share = () => import('../src/server/api/share.js')
+const publicTrip = () => import('../src/server/api/public-trip.js')
+const downloadPdf = () => import('../src/server/api/download-pdf.js')
+const rates = () => import('../src/server/api/rates.js')
+const adminMetrics = () => import('../src/server/api/admin/metrics.js')
+const weatherRefresh = () => import('../src/server/api/weather/refresh.js')
 
 const exactRoutes = new Map([
   ['health', health],
@@ -80,9 +80,23 @@ export default async function handler(req, res) {
   }
 
   req.query = { ...(req.query || {}), ...params }
-  return routeHandler(req, res)
+  try {
+    const { default: handleRoute } = await routeHandler()
+    return await handleRoute(req, res)
+  } catch (error) {
+    console.error('[api route failure]', { route: routePath, code: error?.code, stack: error?.stack })
+    if (res.headersSent) {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: 'The API request failed. Check Vercel Runtime Logs.', code: error?.code || 'RouteError' })}\n\n`)
+      return res.end()
+    }
+    return res.status(500).json({
+      error: 'The API route could not run. Check Vercel Runtime Logs for the exception.',
+      code: error?.code || 'RouteError',
+      route: routePath,
+    })
+  }
 }
 
 export const config = {
-  maxDuration: 30,
+  maxDuration: 60,
 }

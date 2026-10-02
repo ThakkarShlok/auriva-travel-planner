@@ -32,7 +32,13 @@ export async function streamItinerary(preferences, { signal, onToken, onPartialJ
   }
 
   if (!response.ok || !response.body) {
-    onError?.(`Server error: ${response.status}`)
+    let message = `Server error: ${response.status}`
+    try {
+      const detail = await response.json()
+      if (detail.error) message = detail.error
+      if (detail.code) message += ` (${detail.code})`
+    } catch {}
+    onError?.(message)
     return
   }
 
