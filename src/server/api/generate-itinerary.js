@@ -1,4 +1,4 @@
-import { callGroq, GroqError, assertGroqKey } from './_lib/groq.js'
+import { callGemini, assertGeminiKey, GEMINI_MODEL } from './_lib/gemini.js'
 
 const SYSTEM_PROMPT = `You are an expert travel planner. Respond with a JSON object only, no markdown fences. Use this exact schema:
 {
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
 
     // Validate env first so the error is clear
-    assertGroqKey()
+    assertGeminiKey()
 
     const { destination, duration, budget, travelers, interests } = req.body ?? {}
 
@@ -38,8 +38,8 @@ Budget level: ${budget || 'moderate'}. Travelers: ${travelers || 2}.
 Interests: ${interests || 'sightseeing, local food, culture'}.
 Include ${days} days of activities with specific real place names.`
 
-    const content = await callGroq({
-      model: 'llama-3.3-70b-versatile',
+    const content = await callGemini({
+      model: GEMINI_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },

@@ -1,8 +1,8 @@
-import { assertGroqKey } from './_lib/groq.js'
+import { assertGeminiKey, GEMINI_MODEL } from './_lib/gemini.js'
 import { getWeatherForDestination, buildWeatherPromptContext } from './_lib/weather.js'
 import { logGeneration } from '../../db/queries/generationLogs.js'
 
-const MODEL = 'llama-3.3-70b-versatile'
+const MODEL = GEMINI_MODEL
 
 const SYSTEM_PROMPT = `You are an expert travel planner. Respond with a JSON object only, no markdown fences. Use this exact schema:
 {
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed', code: 'MethodNotAllowed' })
     }
 
-    const apiKey = assertGroqKey()
+    const apiKey = assertGeminiKey()
 
     const { destination, duration, budget, travelers, interests, startDate } = req.body ?? {}
 
@@ -79,32 +79,31 @@ Include ${days} days of activities with specific real place names.`
       : null
     )
 
-    const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:streamGenerateContent?alt=sse`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'x-goog-api-key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: systemPromptWithContext },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-        stream: true,
+        systemInstruction: { parts: [{ text: systemPromptWithContext }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 4000,
+          responseMimeType: 'application/json',
+        },
       }),
     })
 
     if (!upstream.ok || !upstream.body) {
       const errBody = await upstream.text().catch(() => '')
-      sendEvent('error', { error: `Groq API ${upstream.status}: ${errBody.slice(0, 300)}` })
+      sendEvent('error', { error: `Gemini API ${upstream.status}: ${errBody.slice(0, 300)}` })
       logGeneration({
         endpoint: 'generate-itinerary-stream',
         model: MODEL,
         status: 'error',
-        errorMessage: `Groq API ${upstream.status}: ${errBody.slice(0, 300)}`,
+        errorMessage: `Gemini API ${upstream.status}: ${errBody.slice(0, 300)}`,
         latencyMs: Date.now() - startTime,
         contextEnrichments: { weather: !!weatherData, weatherCached: weatherData?.cached ?? null, currency: 'USD' },
       })
@@ -130,10 +129,12 @@ Include ${days} days of activities with specific real place names.`
         if (payload === '[DONE]') continue
         try {
           const parsed = JSON.parse(payload)
-          const delta = parsed.choices?.[0]?.delta?.content
-          if (delta) sendEvent('token', { content: delta })
+          const parts = parsed.candidates?.[0]?.content?.parts ?? []
+          for (const part of parts) {
+            if (part.text) sendEvent('token', { content: part.text })
+          }
         } catch {
-          // skip malformed SSE line from Groq
+          // skip malformed SSE line from Gemini
         }
       }
     }

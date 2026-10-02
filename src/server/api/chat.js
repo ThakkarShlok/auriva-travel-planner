@@ -1,7 +1,7 @@
-import { callGroq, GroqError, assertGroqKey } from './_lib/groq.js'
+import { callGemini, assertGeminiKey, GEMINI_MODEL } from './_lib/gemini.js'
 import { logGeneration } from '../../db/queries/generationLogs.js'
 
-const MODEL = 'llama-3.1-8b-instant'
+const MODEL = GEMINI_MODEL
 const SYSTEM_PROMPT = `You are Auriva, a helpful AI travel assistant. Give concise, accurate, practical travel advice. Recommend real places, real hotels, and real services. If you're uncertain about something, say so rather than guessing.`
 
 export default async function handler(req, res) {
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     // Validate env first so the error is clear
-    assertGroqKey()
+    assertGeminiKey()
 
     const { message, history = [] } = req.body ?? {}
 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'history must be an array of at most 20 messages', code: 'ValidationError' })
     }
 
-    const content = await callGroq({
+    const content = await callGemini({
       model: MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },

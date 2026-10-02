@@ -1,11 +1,11 @@
-import { callGroq } from './_lib/groq.js'
+import { callGemini, GEMINI_MODEL } from './_lib/gemini.js'
 import { requireUser, AuthError } from './_lib/auth.js'
 import { getTripWithDays, updateTripDays, updateTripMetadata } from '../../db/queries/trips.js'
 import { appendMessage } from '../../db/queries/conversations.js'
 import { buildWeatherPromptContext } from './_lib/weather.js'
 import { logGeneration } from '../../db/queries/generationLogs.js'
 
-const MODEL = 'llama-3.3-70b-versatile'
+const MODEL = GEMINI_MODEL
 
 const REFINE_SYSTEM_PROMPT = `You are an expert travel planner refining an existing itinerary based on user feedback. You will be given the current itinerary as JSON and the user's modification request.
 
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
 
     const userPrompt = `Current itinerary:\n${JSON.stringify(currentItinerary)}\n\nDestination: ${trip.destination}, ${trip.duration} days.\n\nUser request: ${instruction.trim()}\n\nReturn the full updated itinerary as JSON.`
 
-    const content = await callGroq({
+    const content = await callGemini({
       model: MODEL,
       messages: [
         { role: 'system', content: systemPromptWithContext },
@@ -97,10 +97,10 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: 'AI returned malformed JSON' })
     }
 
-    // Merge coordinates + companion fields from the existing DB activities into what Groq returned.
-    // Groq only returns the schema fields (time/title/description/cost/lat/lng).
-    // lat/lng may be null if Groq omitted them for unchanged activities — fall back to DB values.
-    // checked/notes/actualCost are never returned by Groq — always restored from DB.
+    // Merge coordinates + companion fields from the existing DB activities into what Gemini returned.
+    // Gemini only returns the schema fields (time/title/description/cost/lat/lng).
+    // lat/lng may be null if Gemini omitted them for unchanged activities — fall back to DB values.
+    // checked/notes/actualCost are never returned by Gemini — always restored from DB.
     const mergedDays = (updated.days ?? []).map((day, dayIdx) => {
       const prevDay = trip.days?.[dayIdx]
       return {

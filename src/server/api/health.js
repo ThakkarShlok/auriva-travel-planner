@@ -1,4 +1,4 @@
-import { assertGroqKey } from './_lib/groq.js'
+import { assertGeminiKey } from './_lib/gemini.js'
 import { db, getDatabaseUrlSource } from '../../db/index.js'
 import { sql } from 'drizzle-orm'
 
@@ -9,15 +9,15 @@ export default async function handler(req, res) {
     }
 
     const checks = {
-      groqKey: 'unknown',
+      geminiKey: 'unknown',
       databaseUrl: 'unknown',
       databaseUrlSource: 'unknown',
       clerkSecret: 'unknown',
       databaseConnection: 'unknown',
     }
 
-    try { assertGroqKey(); checks.groqKey = 'present' }
-    catch { checks.groqKey = 'missing or malformed' }
+    try { assertGeminiKey(); checks.geminiKey = 'present' }
+    catch { checks.geminiKey = 'missing or malformed' }
 
     const databaseUrlSource = getDatabaseUrlSource()
     checks.databaseUrl = databaseUrlSource ? 'present' : 'missing'
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       checks.databaseConnection = `failed: ${err.message?.slice(0, 100)}`
     }
 
-    const ok = checks.groqKey === 'present'
+    const ok = checks.geminiKey === 'present'
       && checks.databaseUrl === 'present'
       && checks.clerkSecret === 'present'
       && checks.databaseConnection === 'ok'
